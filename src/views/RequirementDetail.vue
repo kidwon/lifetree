@@ -19,9 +19,11 @@
         <van-cell-group inset title="需求附件" style="margin-top: 16px;">
           <van-cell title="查看附件" is-link />
         </van-cell-group>
-        
-        <div class="agreement-button" @click="goToAgreement">
-          <van-button type="primary" block>查看协议</van-button>
+      </div>
+      
+      <div class="bottom-action-bar">
+        <div class="action-circle" @click="goToAgreement">
+          <van-icon name="friends-o" size="24" />
         </div>
       </div>
     </div>
@@ -31,7 +33,7 @@
   import HeaderBar from '../components/HeaderBar.vue'
   
   export default {
-    name: 'RequirementDetail',
+    name: 'RequirementDetailPage',
     components: {
       HeaderBar
     },
@@ -101,6 +103,7 @@
   <style scoped>
   .page-content {
     padding-top: 56px;
+    padding-bottom: 70px;
   }
   
   .detail-header {
@@ -118,7 +121,29 @@
     line-height: 1.6;
   }
   
-  .agreement-button {
-    margin: 30px 16px;
+  .bottom-action-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background-color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    z-index: 10;
+  }
+  
+  .action-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: #1989fa;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    box-shadow: 0 2px 8px rgba(25, 137, 250, 0.3);
   }
   </style>
