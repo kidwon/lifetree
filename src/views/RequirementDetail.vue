@@ -22,8 +22,10 @@
       </div>
       
       <div class="bottom-action-bar">
-        <div class="action-circle" @click="goToAgreement">
-          <van-icon name="friends-o" size="24" />
+        <div @click="goToAgreement">
+          <div class="icon-circle">
+            <van-icon name="friends-o" size="24" />
+          </div>
         </div>
       </div>
     </div>
@@ -135,15 +137,18 @@
     z-index: 10;
   }
   
-  .action-circle {
-    width: 48px;
-    height: 48px;
+  .icon-circle {
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
-    background-color: #1989fa;
+    border: 2px solid #e0e0e0;
     display: flex;
     justify-content: center;
     align-items: center;
-    color: white;
-    box-shadow: 0 2px 8px rgba(25, 137, 250, 0.3);
+    background-color: #fff;
+  }
+  
+  .icon-circle .van-icon {
+    color: #323233;
   }
   </style>
