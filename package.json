@@ -1,5 +1,5 @@
 {
-  "name": "mobile-app",
+  "name": "lifetree",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -23,9 +23,9 @@
     "@vue/cli-service": "~5.0.0",
     "eslint": "^7.32.0",
     "eslint-plugin-vue": "^8.0.3",
-    "gh-pages": "^6.0.0"
+    "gh-pages": "^6.3.0"
   },
-  "homepage": "https://你的用户名.github.io/mobile-app",
+  "homepage": "https://kidwon.github.io/lifetree",
   "eslintConfig": {
     "root": true,
     "env": {

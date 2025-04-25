@@ -1,6 +1,6 @@
 module.exports = {
   // 基本路径，如果要部署到 https://用户名.github.io/仓库名/，则publicPath设为'/仓库名/'
-  publicPath: process.env.NODE_ENV === 'production' ? '/mobile-app/' : '/',
+  publicPath: process.env.NODE_ENV === 'production' ? '/lifetree/' : '/',
   
   // 输出文件目录
   outputDir: 'dist',

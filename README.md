@@ -1,4 +1,4 @@
-# mobile-app
+# lifetree
 
 ## Project setup
 ```
