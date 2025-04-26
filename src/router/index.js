@@ -47,6 +47,11 @@ const routes = [
     path: '/agreement',
     name: 'Agreement',
     component: Agreement
+  },
+  // 重定向 - 使用新的通配符语法
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/requirements'
   }
 ]
 
