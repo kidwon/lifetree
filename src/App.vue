@@ -12,6 +12,24 @@ export default {
 </script>
 
 <style>
+/* 使用@font-face引入崇羲篆体 */
+@font-face {
+  font-family: 'ChongXiZhuanTi';
+  src: url('./assets/fonts/ChongXiZhuanTi.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* 小篆字体类 */
+.small-seal-font {
+  font-family: 'ChongXiZhuanTi', sans-serif;
+}
+
+/* 为标题专门定制的小篆样式 */
+.header-title.small-seal-font {
+  letter-spacing: 2px;
+}
+
 #app {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;

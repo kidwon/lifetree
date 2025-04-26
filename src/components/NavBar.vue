@@ -3,7 +3,11 @@
     <van-tabbar v-model="active" route>
       <van-tabbar-item to="/requirements">
         <template #icon>
-          <div class="custom-icon">
+          <div 
+            class="custom-icon"
+            @touchstart="handleTouchStart('requirements')"
+            @touchend="handleTouchEnd"
+          >
             <div class="icon-circle">
               <img src="https://b.yzcdn.cn/vant/dark-theme.svg" alt="月亮" class="theme-icon" />
             </div>
@@ -21,7 +25,11 @@
       </van-tabbar-item>
       <van-tabbar-item to="/results">
         <template #icon>
-          <div class="custom-icon">
+          <div 
+            class="custom-icon"
+            @touchstart="handleTouchStart('results')"
+            @touchend="handleTouchEnd"
+          >
             <div class="icon-circle">
               <img src="https://b.yzcdn.cn/vant/light-theme.svg" alt="太阳" class="theme-icon" />
             </div>
@@ -37,7 +45,10 @@ export default {
   name: 'NavBar',
   data() {
     return {
-      active: 0
+      active: 0,
+      longPressTimer: null,
+      longPressDelay: 800, // 长按触发时间，单位毫秒
+      currentIcon: null
     }
   },
   watch: {
@@ -65,6 +76,42 @@ export default {
       // 在首页时默认选中需求列表标签
       this.active = 0
     }
+  },
+  methods: {
+    handleTouchStart(icon) {
+      this.currentIcon = icon;
+      // 清除可能存在的定时器
+      if (this.longPressTimer) {
+        clearTimeout(this.longPressTimer);
+      }
+      
+      // 设置长按定时器
+      this.longPressTimer = setTimeout(() => {
+        this.onLongPress(icon);
+      }, this.longPressDelay);
+    },
+    
+    handleTouchEnd() {
+      // 清除定时器
+      if (this.longPressTimer) {
+        clearTimeout(this.longPressTimer);
+        this.longPressTimer = null;
+      }
+      this.currentIcon = null;
+    },
+    
+    onLongPress(icon) {
+      if (icon === 'requirements') {
+        // 长按月亮图标，跳转到新建需求页面
+        this.$router.push('/requirement/new');
+      } else if (icon === 'results') {
+        // 长按太阳图标，跳转到新建结果页面
+        this.$router.push('/result/new');
+      }
+      
+      // 显示一个提示，告知用户当前操作
+      this.$toast.success(`正在前往${icon === 'requirements' ? '新建需求' : '新建结果'}页面...`);
+    }
   }
 }
 </script>
@@ -83,6 +130,10 @@ export default {
   justify-content: center;
   align-items: center;
   height: 100%;
+  /* 防止长按时出现系统菜单 */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .icon-circle {

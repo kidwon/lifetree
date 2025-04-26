@@ -8,9 +8,9 @@
         </div>
         
         <van-cell-group inset>
-          <van-cell title="用户名" value="测试用户" />
-          <van-cell title="手机号" value="138****1234" />
-          <van-cell title="邮箱" value="test@example.com" />
+          <van-cell title="用户编号" value="123456" />
+          <!-- <van-cell title="手机号" value="138****1234" />
+          <van-cell title="邮箱" value="test@example.com" /> -->
         </van-cell-group>
         
         <div class="action-buttons">

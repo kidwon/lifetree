@@ -1,7 +1,18 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
-import { Button, Tabbar, TabbarItem, Cell, CellGroup, NavBar, Icon } from 'vant'
+import { 
+  Button, 
+  Tabbar, 
+  TabbarItem, 
+  Cell, 
+  CellGroup, 
+  NavBar, 
+  Icon, 
+  Form,
+  Field,
+  Toast 
+} from 'vant'
 import 'vant/lib/index.css'
 
 // 创建Vue应用实例
@@ -18,6 +29,9 @@ app.use(Cell)
 app.use(CellGroup)
 app.use(NavBar)
 app.use(Icon)
+app.use(Form)
+app.use(Field)
+app.use(Toast)
 
 // 挂载应用
 app.mount('#app')
