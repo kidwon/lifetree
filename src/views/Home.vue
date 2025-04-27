@@ -4,7 +4,7 @@
     
     <div class="page-content home-content">
       <div class="welcome-section">
-        <h2>生命树</h2>
+        <h2 class="small-seal-font">生命树</h2>
       </div>
     </div>
     
@@ -26,37 +26,31 @@ export default {
 </script>
 
 <style scoped>
-.home-content {
+.page-content {
+  padding-top: 56px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: calc(100vh - 96px);
-}
-
-.profile-icon {
-  position: absolute;
-  top: 60px;
-  right: 20px;
-  background-color: #f2f2f2;
-  border-radius: 50%;
-  padding: 8px;
-  cursor: pointer;
+  height: calc(100vh - 106px);
 }
 
 .welcome-section {
   text-align: center;
   margin-top: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60%;
 }
 
 .welcome-section h2 {
-  font-size: 24px;
-  margin-bottom: 12px;
+  font-size: 36px;
   color: #333;
+  letter-spacing: 5px;
 }
 
-.welcome-section p {
-  font-size: 16px;
-  color: #666;
+/* 为小篆字体添加特殊样式 */
+.welcome-section .small-seal-font {
+  margin-bottom: 30px;
 }
 </style>

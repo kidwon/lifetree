@@ -7,9 +7,9 @@
       :right-text="rightText"
       @click-right="onClickRight"
     >
-      <!-- 使用自定义的title插槽来应用小篆字体 -->
+      <!-- 移除小篆字体，使用普通标题 -->
       <template #title>
-        <span class="header-title small-seal-font">{{ title }}</span>
+        <span class="header-title">{{ title }}</span>
       </template>
     </van-nav-bar>
   </div>
