@@ -7,6 +7,9 @@
             class="custom-icon"
             @touchstart="handleTouchStart('requirements')"
             @touchend="handleTouchEnd"
+            @mousedown="handleMouseDown('requirements')"
+            @mouseup="handleMouseUp"
+            @mouseleave="handleMouseUp"
           >
             <div class="icon-circle">
               <img src="https://b.yzcdn.cn/vant/dark-theme.svg" alt="月亮" class="theme-icon" />
@@ -29,6 +32,9 @@
             class="custom-icon"
             @touchstart="handleTouchStart('results')"
             @touchend="handleTouchEnd"
+            @mousedown="handleMouseDown('results')"
+            @mouseup="handleMouseUp"
+            @mouseleave="handleMouseUp"
           >
             <div class="icon-circle">
               <img src="https://b.yzcdn.cn/vant/light-theme.svg" alt="太阳" class="theme-icon" />
@@ -41,6 +47,9 @@
 </template>
 
 <script>
+// 导入Toast
+import { showToast } from 'vant';
+
 export default {
   name: 'NavBar',
   data() {
@@ -78,6 +87,7 @@ export default {
     }
   },
   methods: {
+    // 触摸设备的长按处理
     handleTouchStart(icon) {
       this.currentIcon = icon;
       // 清除可能存在的定时器
@@ -99,6 +109,30 @@ export default {
       }
       this.currentIcon = null;
     },
+
+    // 鼠标设备的长按处理
+    handleMouseDown(icon) {
+      // 在PC端使用鼠标事件模拟长按
+      this.currentIcon = icon;
+      // 清除可能存在的定时器
+      if (this.longPressTimer) {
+        clearTimeout(this.longPressTimer);
+      }
+      
+      // 设置长按定时器
+      this.longPressTimer = setTimeout(() => {
+        this.onLongPress(icon);
+      }, this.longPressDelay);
+    },
+    
+    handleMouseUp() {
+      // 清除定时器
+      if (this.longPressTimer) {
+        clearTimeout(this.longPressTimer);
+        this.longPressTimer = null;
+      }
+      this.currentIcon = null;
+    },
     
     onLongPress(icon) {
       if (icon === 'requirements') {
@@ -109,8 +143,11 @@ export default {
         this.$router.push('/result/new');
       }
       
-      // 显示一个提示，告知用户当前操作
-      this.$toast.success(`正在前往${icon === 'requirements' ? '新建需求' : '新建结果'}页面...`);
+      // 使用导入的showToast而不是this.$toast
+      showToast({
+        message: `正在前往${icon === 'requirements' ? '新建需求' : '新建结果'}页面...`,
+        type: 'success'
+      });
     }
   }
 }
@@ -134,6 +171,8 @@ export default {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
+  /* 改变鼠标样式提示可交互 */
+  cursor: pointer;
 }
 
 .icon-circle {
@@ -145,6 +184,13 @@ export default {
   justify-content: center;
   align-items: center;
   background-color: #fff;
+  /* 添加悬停效果 */
+  transition: background-color 0.3s, border-color 0.3s;
+}
+
+.custom-icon:hover .icon-circle {
+  background-color: #f5f5f5;
+  border-color: #ccc;
 }
 
 .theme-icon {
@@ -162,5 +208,11 @@ export default {
 
 .nav-bar :deep(.van-icon) {
   font-size: 26px;
+}
+
+/* 长按时的视觉反馈 */
+.custom-icon:active .icon-circle {
+  background-color: #e8e8e8;
+  transform: scale(0.95);
 }
 </style>
