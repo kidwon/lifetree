@@ -11,9 +11,12 @@ import {
   Icon, 
   Form,
   Field,
-  Toast 
+  Toast,
+  Dialog,
+  Notify
 } from 'vant'
 import 'vant/lib/index.css'
+import axios from 'axios'
 
 // 创建Vue应用实例
 const app = createApp(App)
@@ -32,6 +35,11 @@ app.use(Icon)
 app.use(Form)
 app.use(Field)
 app.use(Toast)
+app.use(Dialog)
+app.use(Notify)
+
+// 设置全局变量
+app.config.globalProperties.$axios = axios
 
 // 挂载应用
 app.mount('#app')

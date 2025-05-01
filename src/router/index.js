@@ -1,6 +1,7 @@
-// router/index.js
+// router/index.js - 更新版本
 
 import { createRouter, createWebHashHistory } from 'vue-router'
+import auth from '@/store/auth'
 
 // 导入页面组件
 import Home from '../views/Home.vue'
@@ -10,9 +11,11 @@ import Profile from '../views/Profile.vue'
 import RequirementDetail from '../views/RequirementDetail.vue'
 import ResultDetail from '../views/ResultDetail.vue'
 import Agreement from '../views/Agreement.vue'
-// 导入新增的新建页面组件
 import NewRequirement from '../views/NewRequirement.vue'
 import NewResult from '../views/NewResult.vue'
+// 导入认证页面
+import Login from '../views/Login.vue'
+import Register from '../views/Register.vue'
 
 // 定义路由
 const routes = [
@@ -24,50 +27,69 @@ const routes = [
   {
     path: '/requirements',
     name: 'Requirements',
-    component: Requirements
+    component: Requirements,
+    meta: { requiresAuth: true }
   },
   {
     path: '/results',
     name: 'Results',
-    component: Results
+    component: Results,
+    meta: { requiresAuth: true }
   },
   {
     path: '/profile',
     name: 'Profile',
-    component: Profile
+    component: Profile,
+    meta: { requiresAuth: true }
   },
   {
     path: '/requirement/:id',
     name: 'RequirementDetail',
     component: RequirementDetail,
-    props: true
+    props: true,
+    meta: { requiresAuth: true }
   },
   {
     path: '/result/:id',
     name: 'ResultDetail',
     component: ResultDetail,
-    props: true
+    props: true,
+    meta: { requiresAuth: true }
   },
   {
     path: '/agreement',
     name: 'Agreement',
     component: Agreement
   },
-  // 新增的路由
   {
     path: '/requirement/new',
     name: 'NewRequirement',
-    component: NewRequirement
+    component: NewRequirement,
+    meta: { requiresAuth: true }
   },
   {
     path: '/result/new',
     name: 'NewResult',
-    component: NewResult
+    component: NewResult,
+    meta: { requiresAuth: true }
+  },
+  // 认证相关路由
+  {
+    path: '/login',
+    name: 'Login',
+    component: Login,
+    meta: { guest: true }
+  },
+  {
+    path: '/register',
+    name: 'Register',
+    component: Register,
+    meta: { guest: true }
   },
   // 重定向
   {
     path: '/:pathMatch(.*)*',
-    redirect: '/requirements'
+    redirect: '/'
   }
 ]
 
@@ -77,5 +99,37 @@ const router = createRouter({
   history: createWebHashHistory(),
   routes
 })
+
+// 全局路由守卫
+router.beforeEach((to, from, next) => {
+  // 需要认证的页面
+  if (to.matched.some(record => record.meta.requiresAuth)) {
+    // 检查用户是否已登录
+    if (!auth.state.isAuthenticated) {
+      // 保存用户想要访问的页面路径
+      sessionStorage.setItem('redirectPath', to.fullPath);
+      // 重定向到登录页面
+      next({
+        path: '/login'
+      });
+    } else {
+      next();
+    }
+  } 
+  // 游客专属页面（已登录用户不应访问的页面，如登录、注册页）
+  else if (to.matched.some(record => record.meta.guest)) {
+    if (auth.state.isAuthenticated) {
+      // 已登录用户访问游客页面，重定向到首页
+      next({
+        path: '/'
+      });
+    } else {
+      next();
+    }
+  } else {
+    // 公共页面，所有用户都可访问
+    next();
+  }
+});
 
 export default router
