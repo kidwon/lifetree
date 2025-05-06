@@ -1,4 +1,4 @@
-// src/store/auth.js
+// src/store/auth.js - 修改后支持生物识别验证
 
 import { reactive } from 'vue';
 import apiService from '../api/api';
@@ -53,6 +53,11 @@ const authMethods = {
       localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('token', token);
       
+      // 同时保存到生物识别登录使用的存储中
+      localStorage.setItem('biometricEmail', credentials.email);
+      localStorage.setItem('biometricToken', token);
+      localStorage.setItem('biometricUser', JSON.stringify(user));
+      
       // 更新状态
       authState.user = user;
       authState.token = token;
@@ -67,11 +72,40 @@ const authMethods = {
     }
   },
   
+  // 生物识别登录
+  async biometricLogin(userInfo, token) {
+    authState.loading = true;
+    
+    try {
+      // 设置用户信息和令牌
+      localStorage.setItem('user', userInfo);
+      localStorage.setItem('token', token);
+      
+      // 更新状态
+      authState.user = JSON.parse(userInfo);
+      authState.token = token;
+      authState.isAuthenticated = true;
+      
+      return authState.user;
+    } catch (error) {
+      authState.error = '生物识别登录失败';
+      throw error;
+    } finally {
+      authState.loading = false;
+    }
+  },
+  
   // 用户注销
   logout() {
     // 清除本地存储
     localStorage.removeItem('user');
     localStorage.removeItem('token');
+    
+    // 注意：我们不清除生物识别凭据，以便用户可以再次使用生物识别登录
+    // 如果要完全注销，取消下面三行的注释
+    // localStorage.removeItem('biometricEmail');
+    // localStorage.removeItem('biometricToken');
+    // localStorage.removeItem('biometricUser');
     
     // 重置状态
     authState.user = null;
@@ -94,6 +128,9 @@ const authMethods = {
       // 更新存储的用户信息
       localStorage.setItem('user', JSON.stringify(currentUser));
       authState.user = currentUser;
+      
+      // 同时更新生物识别用户信息
+      localStorage.setItem('biometricUser', JSON.stringify(currentUser));
       
       return currentUser;
     } catch (error) {
@@ -123,6 +160,9 @@ const authMethods = {
       localStorage.setItem('user', JSON.stringify(updatedUser));
       authState.user = updatedUser;
       
+      // 同时更新生物识别用户信息
+      localStorage.setItem('biometricUser', JSON.stringify(updatedUser));
+      
       return updatedUser;
     } catch (error) {
       authState.error = error.response?.data?.error || '更新用户信息失败';
@@ -130,6 +170,13 @@ const authMethods = {
     } finally {
       authState.loading = false;
     }
+  },
+  
+  // 检查生物识别登录是否已设置
+  hasBiometricLoginSetup() {
+    return !!localStorage.getItem('biometricToken') && 
+           !!localStorage.getItem('biometricEmail') &&
+           !!localStorage.getItem('biometricUser');
   }
 };
 
