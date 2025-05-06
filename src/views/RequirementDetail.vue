@@ -1,26 +1,36 @@
+// 需求详情页面 (RequirementDetail.vue)
 <template>
   <div class="page">
-    <header-bar :title="requirement.title || '需求详情'" />
-    
+    <header-bar :title="'需求详情'" />
+
     <div class="page-content">
       <div class="detail-header">
         <h2>{{ requirement.title }}</h2>
         <div class="detail-meta">
-          <span>发布时间: {{ requirement.date }}</span>
+          <span>发布时间: {{ formatDate(requirement.createdAt) }}</span>
+          <van-tag :type="getStatusType(requirement.status)" class="status-tag">
+            {{ getStatusText(requirement.status) }}
+          </van-tag>
         </div>
       </div>
-      
+
       <van-cell-group inset title="需求描述">
         <div class="detail-content">
           <p>{{ requirement.description }}</p>
         </div>
       </van-cell-group>
-      
-      <van-cell-group inset title="需求附件" style="margin-top: 16px;">
-        <van-cell title="查看附件" is-link />
+
+      <van-cell-group inset title="操作" style="margin-top: 16px;">
+        <van-cell title="查看相关结果" is-link @click="goToResults" />
+        <van-cell title="更改状态" is-link @click="showStatusActionSheet = true" />
+        <van-cell title="删除需求" is-link @click="confirmDelete" />
       </van-cell-group>
     </div>
-    
+
+    <!-- 状态切换动作面板 -->
+    <van-action-sheet v-model:show="showStatusActionSheet" :actions="statusActions" cancel-text="取消"
+      @select="onSelectStatus" />
+
     <div class="bottom-action-bar">
       <div @click="goToAgreement">
         <div class="icon-circle">
@@ -33,6 +43,8 @@
 
 <script>
 import HeaderBar from '../components/HeaderBar.vue'
+import { showConfirmDialog, showSuccessToast, showFailToast } from 'vant'
+import apiService from '../api/api'
 
 export default {
   name: 'RequirementDetailPage',
@@ -47,56 +59,115 @@ export default {
   },
   data() {
     return {
-      // 示例数据
       requirement: {
-        id: null,
+        id: '',
         title: '',
-        date: '',
-        description: ''
-      }
+        description: '',
+        status: '',
+        createdBy: '',
+        createdAt: '',
+        updatedAt: ''
+      },
+      loading: true,
+      showStatusActionSheet: false,
+      statusActions: [
+        { name: '已创建', value: 'CREATED' },
+        { name: '确认中', value: 'CONFIRMING' },
+        { name: '进行中', value: 'IN_PROGRESS' },
+        { name: '已完成', value: 'COMPLETED' },
+        { name: '已取消', value: 'CANCELLED' }
+      ]
     }
   },
   created() {
-    // 模拟从API获取数据
-    this.fetchData()
+    this.fetchRequirementDetail()
   },
   methods: {
-    fetchData() {
-      // 模拟API调用
-      // 实际应用中，这里应该调用真实的API
-      setTimeout(() => {
-        // 假数据
-        const data = {
-          1: {
-            id: 1,
-            title: '需求1：移动应用开发',
-            date: '2025-04-20',
-            description: '开发一个移动版应用，包含需求列表、结果列表等功能。需要支持用户登录和个人信息管理。界面需要简洁易用，符合现代设计规范。'
-          },
-          2: {
-            id: 2,
-            title: '需求2：网页设计优化',
-            date: '2025-04-21',
-            description: '对现有网页进行设计优化，提升用户体验和交互效果。包括色彩方案调整、布局优化和响应式设计实现。'
-          },
-          3: {
-            id: 3,
-            title: '需求3：后端服务开发',
-            date: '2025-04-22',
-            description: '开发RESTful API服务，支持前端应用的数据需求。包括用户认证、数据存储和业务逻辑处理。需要高性能和可扩展性。'
-          }
+    async fetchRequirementDetail() {
+      this.loading = true
+      try {
+        const response = await apiService.requirements.getById(this.id)
+        this.requirement = response.data
+      } catch (error) {
+        console.error('Error fetching requirement detail:', error)
+        showFailToast('获取需求详情失败')
+      } finally {
+        this.loading = false
+      }
+    },
+    formatDate(dateString) {
+      if (!dateString) return '未知'
+
+      // 格式化日期
+      const date = new Date(dateString)
+      return date.toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    },
+    getStatusText(status) {
+      const statusMap = {
+        'CREATED': '已创建',
+        'CONFIRMING': '确认中',
+        'IN_PROGRESS': '进行中',
+        'COMPLETED': '已完成',
+        'CANCELLED': '已取消'
+      }
+      return statusMap[status] || '未知状态'
+    },
+    getStatusType(status) {
+      const typeMap = {
+        'CREATED': 'primary',
+        'CONFIRMING': 'warning',
+        'IN_PROGRESS': 'success',
+        'COMPLETED': 'success',
+        'CANCELLED': 'danger'
+      }
+      return typeMap[status] || 'default'
+    },
+    async onSelectStatus(action) {
+      try {
+        await apiService.requirements.update(this.id, { status: action.value })
+        this.requirement.status = action.value
+        showSuccessToast('状态更新成功')
+      } catch (error) {
+        console.error('Error updating status:', error)
+        showFailToast('状态更新失败')
+      }
+    },
+    confirmDelete() {
+      showConfirmDialog({
+        title: '确认删除',
+        message: '确定要删除这个需求吗？此操作不可撤销！',
+      }).then(async () => {
+        try {
+          await apiService.requirements.delete(this.id)
+          showSuccessToast('需求已删除')
+          // 返回到需求列表页
+          this.$router.push('/requirements')
+        } catch (error) {
+          console.error('Error deleting requirement:', error)
+          showFailToast('删除需求失败')
         }
-        
-        this.requirement = data[this.id] || {
-          id: this.id,
-          title: '未知需求',
-          date: '未知',
-          description: '没有找到对应的需求信息'
-        }
-      }, 100)
+      }).catch(() => {
+        // 用户取消了操作，不做任何事
+      })
     },
     goToAgreement() {
-      this.$router.push('/agreement')
+      // 将需求ID和状态作为查询参数传递给协议页面
+      this.$router.push({
+        path: '/agreement',
+        query: {
+          requirementId: this.id,
+          status: this.requirement.status
+        }
+      })
+    },
+    goToResults() {
+      this.$router.push(`/results/requirement/${this.id}`)
     }
   }
 }
@@ -113,9 +184,20 @@ export default {
 }
 
 .detail-meta {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detail-meta span {
   color: #999;
   font-size: 14px;
-  margin-top: 8px;
+}
+
+.status-tag {
+  margin-bottom: 8px;
+  display: inline-block;
 }
 
 .detail-content {

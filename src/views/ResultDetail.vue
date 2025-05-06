@@ -1,38 +1,61 @@
 <template>
   <div class="page">
-    <header-bar :title="result.title || '结果详情'" />
+    <header-bar 
+      :title="result.title || '结果详情'" 
+      right-text="编辑"
+      @right-click="goToEdit"
+    />
     
     <div class="page-content">
-      <div class="detail-header">
-        <h2>{{ result.title }}</h2>
-        <div class="detail-meta">
-          <span>完成时间: {{ result.date }}</span>
-        </div>
-      </div>
+      <van-loading v-if="loading" vertical class="loading-overlay">加载中...</van-loading>
       
-      <van-cell-group inset title="结果内容">
-        <div class="detail-content">
-          <p>{{ result.description }}</p>
+      <template v-else>
+        <div class="detail-header">
+          <h2>{{ result.title }}</h2>
+          <div class="detail-meta">
+            <van-tag :type="getStatusType(result.status)" class="status-tag">
+              {{ getStatusText(result.status) }}
+            </van-tag>
+            <span>创建时间: {{ formatDate(result.createdAt) }}</span>
+            <span>更新时间: {{ formatDate(result.updatedAt) }}</span>
+          </div>
         </div>
-      </van-cell-group>
-      
-      <van-cell-group inset title="相关文件" style="margin-top: 16px;">
-        <van-cell title="查看文件" is-link />
-      </van-cell-group>
+        
+        <van-cell-group inset title="结果描述">
+          <div class="detail-content">
+            <p>{{ result.description }}</p>
+          </div>
+        </van-cell-group>
+
+        <van-cell-group inset title="关联需求" v-if="result.relatedRequirementId">
+          <van-cell
+            :title="relatedRequirementTitle || '查看关联需求'"
+            is-link
+            @click="goToRelatedRequirement"
+          />
+        </van-cell-group>
+        
+        <van-cell-group inset title="操作" style="margin-top: 16px;">
+          <van-cell title="更改状态" is-link @click="showStatusActionSheet = true" />
+          <van-cell title="删除结果" is-link @click="confirmDelete" />
+        </van-cell-group>
+      </template>
     </div>
     
-    <div class="bottom-action-bar">
-      <div @click="goToAgreement">
-        <div class="icon-circle">
-          <van-icon name="friends-o" size="24" />
-        </div>
-      </div>
-    </div>
+    <!-- 状态切换动作面板 -->
+    <van-action-sheet
+      v-model:show="showStatusActionSheet"
+      :actions="statusActions"
+      cancel-text="取消"
+      @select="onSelectStatus"
+    />
   </div>
 </template>
 
 <script>
 import HeaderBar from '../components/HeaderBar.vue'
+import apiService from '../api/api'
+import { showFailToast, showSuccessToast, showConfirmDialog } from 'vant'
 
 export default {
   name: 'ResultDetailPage',
@@ -41,62 +64,129 @@ export default {
   },
   props: {
     id: {
-      type: [String, Number],
+      type: String,
       required: true
     }
   },
   data() {
     return {
-      // 示例数据
       result: {
-        id: null,
+        id: '',
         title: '',
-        date: '',
-        description: ''
-      }
+        description: '',
+        status: '',
+        relatedRequirementId: null,
+        createdBy: '',
+        createdAt: '',
+        updatedAt: ''
+      },
+      relatedRequirementTitle: '',
+      loading: true,
+      showStatusActionSheet: false,
+      statusActions: [
+        { name: '草稿', value: 'DRAFT' },
+        { name: '已完成', value: 'COMPLETED' },
+        { name: '已归档', value: 'ARCHIVED' },
+        { name: '已拒绝', value: 'REJECTED' }
+      ]
     }
   },
   created() {
-    // 模拟从API获取数据
-    this.fetchData()
+    this.fetchResultDetail()
   },
   methods: {
-    fetchData() {
-      // 模拟API调用
-      // 实际应用中，这里应该调用真实的API
-      setTimeout(() => {
-        // 假数据
-        const data = {
-          1: {
-            id: 1,
-            title: '结果1：应用原型设计',
-            date: '2025-04-23',
-            description: '完成了移动应用的原型设计，包括所有主要页面的布局和交互逻辑。设计符合现代UI/UX标准，着重考虑了用户体验和交互流畅性。'
-          },
-          2: {
-            id: 2,
-            title: '结果2：UI界面优化方案',
-            date: '2025-04-24',
-            description: '完成了网页UI优化方案，包括新的色彩方案、字体选择和布局调整。提供了响应式设计方案，确保在各种设备上都有良好的显示效果。'
-          },
-          3: {
-            id: 3,
-            title: '结果3：API接口文档',
-            date: '2025-04-25',
-            description: '完成了RESTful API接口文档，详细描述了所有接口的参数、返回值和使用方法。提供了认证机制说明和示例代码，便于前端开发人员集成。'
-          }
-        }
+    async fetchResultDetail() {
+      this.loading = true
+      try {
+        const response = await apiService.results.getById(this.id)
+        this.result = response.data
         
-        this.result = data[this.id] || {
-          id: this.id,
-          title: '未知结果',
-          date: '未知',
-          description: '没有找到对应的结果信息'
+        // 如果有关联需求，获取需求标题
+        if (this.result.relatedRequirementId) {
+          this.fetchRelatedRequirement(this.result.relatedRequirementId)
         }
-      }, 100)
+      } catch (error) {
+        console.error('Error fetching result detail:', error)
+        showFailToast('获取结果详情失败')
+      } finally {
+        this.loading = false
+      }
     },
-    goToAgreement() {
-      this.$router.push('/agreement')
+    async fetchRelatedRequirement(requirementId) {
+      try {
+        const response = await apiService.requirements.getById(requirementId)
+        this.relatedRequirementTitle = response.data.title
+      } catch (error) {
+        console.error('Error fetching related requirement:', error)
+        this.relatedRequirementTitle = '未能获取需求标题'
+      }
+    },
+    formatDate(dateString) {
+      if (!dateString) return '未知'
+      
+      // 格式化日期
+      const date = new Date(dateString)
+      return date.toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    },
+    getStatusText(status) {
+      const statusMap = {
+        'DRAFT': '草稿',
+        'COMPLETED': '已完成',
+        'ARCHIVED': '已归档',
+        'REJECTED': '已拒绝'
+      }
+      return statusMap[status] || '未知状态'
+    },
+    getStatusType(status) {
+      const typeMap = {
+        'DRAFT': 'primary',
+        'COMPLETED': 'success',
+        'ARCHIVED': 'warning',
+        'REJECTED': 'danger'
+      }
+      return typeMap[status] || 'default'
+    },
+    async onSelectStatus(action) {
+      try {
+        await apiService.results.update(this.id, { status: action.value })
+        this.result.status = action.value
+        showSuccessToast('状态更新成功')
+      } catch (error) {
+        console.error('Error updating status:', error)
+        showFailToast('状态更新失败')
+      }
+    },
+    confirmDelete() {
+      showConfirmDialog({
+        title: '确认删除',
+        message: '确定要删除这个结果吗？此操作不可撤销！',
+      }).then(async () => {
+        try {
+          await apiService.results.delete(this.id)
+          showSuccessToast('结果已删除')
+          // 返回到结果列表页
+          this.$router.push('/results')
+        } catch (error) {
+          console.error('Error deleting result:', error)
+          showFailToast('删除结果失败')
+        }
+      }).catch(() => {
+        // 用户取消了操作，不做任何事
+      })
+    },
+    goToEdit() {
+      this.$router.push(`/result/edit/${this.id}`)
+    },
+    goToRelatedRequirement() {
+      if (this.result.relatedRequirementId) {
+        this.$router.push(`/requirement/${this.result.relatedRequirementId}`)
+      }
     }
   }
 }
@@ -105,7 +195,7 @@ export default {
 <style scoped>
 .page-content {
   padding-top: 56px;
-  padding-bottom: 70px;
+  padding-bottom: 20px;
 }
 
 .detail-header {
@@ -113,9 +203,20 @@ export default {
 }
 
 .detail-meta {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detail-meta span {
   color: #999;
   font-size: 14px;
-  margin-top: 8px;
+}
+
+.status-tag {
+  margin-bottom: 8px;
+  display: inline-block;
 }
 
 .detail-content {
@@ -123,32 +224,11 @@ export default {
   line-height: 1.6;
 }
 
-.bottom-action-bar {
+.loading-overlay {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 60px;
-  background-color: #fff;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
-  z-index: 10;
-}
-
-.icon-circle {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 2px solid #e0e0e0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: #fff;
-}
-
-.icon-circle .van-icon {
-  color: #323233;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 100;
 }
 </style>

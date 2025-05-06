@@ -1,4 +1,4 @@
-// router/index.js - 更新版本
+// router/index.js - 更新版本，添加结果编辑路由
 
 import { createRouter, createWebHashHistory } from 'vue-router'
 import auth from '@/store/auth'
@@ -12,7 +12,10 @@ import RequirementDetail from '../views/RequirementDetail.vue'
 import ResultDetail from '../views/ResultDetail.vue'
 import Agreement from '../views/Agreement.vue'
 import NewRequirement from '../views/NewRequirement.vue'
+import EditRequirement from '../views/EditRequirement.vue'
 import NewResult from '../views/NewResult.vue'
+import EditResult from '../views/EditResult.vue'
+import ResultsByRequirement from '../views/ResultsByRequirement.vue'
 // 导入认证页面
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
@@ -50,9 +53,30 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/requirement/edit/:id',
+    name: 'EditRequirement',
+    component: EditRequirement,
+    props: true,
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/result/:id',
     name: 'ResultDetail',
     component: ResultDetail,
+    props: true,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/result/edit/:id',
+    name: 'EditResult',
+    component: EditResult,
+    props: true,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/results/requirement/:requirementId',
+    name: 'ResultsByRequirement',
+    component: ResultsByRequirement,
     props: true,
     meta: { requiresAuth: true }
   },

@@ -13,7 +13,17 @@ import {
   Field,
   Toast,
   Dialog,
-  Notify
+  Notify,
+  Tag,
+  Loading,
+  ActionSheet,
+  PullRefresh,
+  List,
+  Empty,
+  Popup,
+  Picker,
+  DropdownMenu,
+  DropdownItem
 } from 'vant'
 import 'vant/lib/index.css'
 import axios from 'axios'
@@ -37,6 +47,16 @@ app.use(Field)
 app.use(Toast)
 app.use(Dialog)
 app.use(Notify)
+app.use(Tag)
+app.use(Loading)
+app.use(ActionSheet)
+app.use(PullRefresh)
+app.use(List)
+app.use(Empty)
+app.use(Popup)
+app.use(Picker)
+app.use(DropdownMenu)
+app.use(DropdownItem)
 
 // 设置全局变量
 app.config.globalProperties.$axios = axios

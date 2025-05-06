@@ -1,10 +1,10 @@
-// src/api/api.js
+// src/api/api.js - 更新API服务以支持新功能
 
 import axios from 'axios';
 
 // 创建axios实例
 const api = axios.create({
-  baseURL: 'http://localhost:8081/api', // 根据你的API服务器地址进行修改
+  baseURL: 'http://192.168.31.123:8081/api', // 根据你的API服务器地址进行修改
   timeout: 10000, // 请求超时时间
   headers: {
     'Content-Type': 'application/json'
@@ -109,6 +109,26 @@ const apiService = {
     // 删除需求
     delete: (id) => {
       return api.delete(`/requirements/${id}`);
+    },
+    // 获取我的需求（作为创建者，带有申请信息）
+    getMyRequirementsWithApplications: () => {
+      return api.get('/requirements/my-requirements');
+    },
+    // 获取我申请的需求
+    getMyApplications: () => {
+      return api.get('/requirements/my-applications');
+    },
+    // 接受需求（申请接受）
+    acceptRequirement: (id) => {
+      return api.post(`/requirements/${id}/accept`);
+    },
+    // 同意申请
+    approveApplication: (id) => {
+      return api.post(`/requirements/${id}/approve`);
+    },
+    // 拒绝申请
+    rejectApplication: (id) => {
+      return api.post(`/requirements/${id}/reject`);
     }
   },
   
