@@ -26,6 +26,8 @@ import {
   DropdownItem
 } from 'vant'
 import 'vant/lib/index.css'
+// 导入全局标签样式
+import './assets/css/tag-styles.css'
 import axios from 'axios'
 
 // 创建Vue应用实例

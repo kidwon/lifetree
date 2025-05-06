@@ -68,6 +68,26 @@ export default {
     },
     goToDetail(id) {
       this.$router.push(`/result/${id}`)
+    },
+    // 获取状态文本
+    getStatusText(status) {
+      const statusMap = {
+        'DRAFT': '草稿',
+        'COMPLETED': '已完成',
+        'ARCHIVED': '已归档',
+        'REJECTED': '已拒绝'
+      }
+      return statusMap[status] || '未知状态'
+    },
+    // 获取状态类型
+    getStatusType(status) {
+      const typeMap = {
+        'DRAFT': 'primary',
+        'COMPLETED': 'success',
+        'ARCHIVED': 'warning',
+        'REJECTED': 'danger'
+      }
+      return typeMap[status] || 'default'
     }
   }
 }

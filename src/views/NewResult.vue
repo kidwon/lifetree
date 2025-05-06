@@ -13,15 +13,13 @@
             :rules="[{ required: true, message: '请填写结果标题' }]"
           />
           
-          <van-field
-            v-model="description"
-            name="description"
-            label="结果描述"
-            type="textarea"
-            rows="6"
-            placeholder="请输入结果详细描述"
-            :rules="[{ required: true, message: '请填写结果描述' }]"
-          />
+          <div class="rich-text-wrapper">
+            <div class="field-label">结果描述</div>
+            <!-- 使用div作为富文本编辑器容器 -->
+            <div ref="editor" class="rich-text-editor"></div>
+            <!-- 错误提示 -->
+            <div v-if="descriptionError" class="error-message">请填写结果描述</div>
+          </div>
           
           <van-field 
             v-if="!relatedRequirementId && requirementOptions.length > 0"
@@ -81,6 +79,7 @@
 import HeaderBar from '../components/HeaderBar.vue'
 import apiService from '../api/api'
 import { showSuccessToast, showFailToast } from 'vant'
+import E from 'wangeditor'
 
 export default {
   name: 'NewResultPage',
@@ -98,7 +97,9 @@ export default {
       showRequirementPicker: false,
       requirements: [],
       selectedRequirementId: '',
-      selectedRequirementTitle: '无关联需求'
+      selectedRequirementTitle: '无关联需求',
+      editor: null,
+      descriptionError: false
     }
   },
   computed: {
@@ -113,7 +114,10 @@ export default {
       })))
     }
   },
-  created() {
+  mounted() {
+    // 初始化富文本编辑器
+    this.initEditor()
+    
     // 获取所有需求列表，用于选择关联
     this.fetchRequirements()
     
@@ -122,7 +126,74 @@ export default {
       this.fetchRequirementDetails(this.relatedRequirementId)
     }
   },
+  beforeUnmount() {
+    // 销毁编辑器实例
+    if (this.editor) {
+      this.editor.destroy()
+      this.editor = null
+    }
+  },
   methods: {
+    initEditor() {
+      // 创建编辑器实例
+      this.editor = new E(this.$refs.editor)
+
+      // 编辑器配置
+      this.editor.config.placeholder = '请输入结果详细描述'
+      this.editor.config.zIndex = 100
+      this.editor.config.menus = [
+        'bold',
+        'italic',
+        'underline',
+        'head',
+        'fontSize',
+        'fontName',
+        'strikeThrough',
+        'foreColor',
+        'backColor',
+        'link',
+        'list',
+        'justify',
+        'quote',
+        'emoticon',
+        'undo',
+        'redo'
+      ]
+
+      // 移动端菜单配置，减少按钮数量
+      if (window.innerWidth < 768) {
+        this.editor.config.menus = [
+          'bold',
+          'head',
+          'fontSize',
+          'list',
+          'justify',
+          'emoticon',
+          'undo',
+          'redo'
+        ]
+      }
+
+      // 设置编辑区域高度
+      this.editor.config.height = 250
+
+      // 创建并挂载编辑器
+      this.editor.create()
+    },
+    validateDescription() {
+      // 获取编辑器HTML内容
+      const editorContent = this.editor.txt.html()
+      
+      // 检查内容是否为空
+      if (!editorContent || editorContent === '<p><br></p>') {
+        this.descriptionError = true
+        return false
+      }
+      
+      this.descriptionError = false
+      this.description = editorContent
+      return true
+    },
     async fetchRequirementDetails(requirementId) {
       this.loading = true
       try {
@@ -154,6 +225,11 @@ export default {
       this.showRequirementPicker = false
     },
     async onSubmit() {
+      // 验证描述字段
+      if (!this.validateDescription()) {
+        return
+      }
+      
       this.submitting = true
       
       try {
@@ -203,5 +279,42 @@ export default {
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 100;
+}
+
+.rich-text-wrapper {
+  background-color: #fff;
+  padding: 10px 16px;
+  position: relative;
+}
+
+.field-label {
+  margin-bottom: 8px;
+  color: #646566;
+  font-size: 14px;
+}
+
+.rich-text-editor {
+  border: 1px solid #ebedf0;
+  border-radius: 4px;
+}
+
+.error-message {
+  color: #ee0a24;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+/* 优化移动端编辑器样式 */
+:deep(.w-e-toolbar) {
+  flex-wrap: wrap;
+  padding: 0 5px;
+}
+
+:deep(.w-e-toolbar .w-e-menu) {
+  padding: 4px 5px;
+}
+
+:deep(.w-e-text-container) {
+  min-height: 200px;
 }
 </style>

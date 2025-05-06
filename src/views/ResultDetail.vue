@@ -4,6 +4,11 @@
       :title="result.title || '结果详情'" 
       right-text="编辑"
       @right-click="goToEdit"
+      v-if="hasPermission"
+    />
+    <header-bar 
+      :title="result.title || '结果详情'" 
+      v-else
     />
     
     <div class="page-content">
@@ -13,9 +18,11 @@
         <div class="detail-header">
           <h2>{{ result.title }}</h2>
           <div class="detail-meta">
-            <van-tag :type="getStatusType(result.status)" class="status-tag">
-              {{ getStatusText(result.status) }}
-            </van-tag>
+            <div class="status-row">
+              <van-tag :type="getStatusType(result.status)" class="custom-tag" round>
+                {{ getStatusText(result.status) }}
+              </van-tag>
+            </div>
             <span>创建时间: {{ formatDate(result.createdAt) }}</span>
             <span>更新时间: {{ formatDate(result.updatedAt) }}</span>
           </div>
@@ -23,7 +30,8 @@
         
         <van-cell-group inset title="结果描述">
           <div class="detail-content">
-            <p>{{ result.description }}</p>
+            <!-- 使用v-html显示HTML格式的内容 -->
+            <p v-html="result.description"></p>
           </div>
         </van-cell-group>
 
@@ -35,7 +43,8 @@
           />
         </van-cell-group>
         
-        <van-cell-group inset title="操作" style="margin-top: 16px;">
+        <!-- 只有管理员或创建者才能看到操作选项 -->
+        <van-cell-group v-if="hasPermission" inset title="操作" style="margin-top: 16px;">
           <van-cell title="更改状态" is-link @click="showStatusActionSheet = true" />
           <van-cell title="删除结果" is-link @click="confirmDelete" />
         </van-cell-group>
@@ -56,6 +65,7 @@
 import HeaderBar from '../components/HeaderBar.vue'
 import apiService from '../api/api'
 import { showFailToast, showSuccessToast, showConfirmDialog } from 'vant'
+import auth from '@/store/auth'
 
 export default {
   name: 'ResultDetailPage',
@@ -89,6 +99,19 @@ export default {
         { name: '已归档', value: 'ARCHIVED' },
         { name: '已拒绝', value: 'REJECTED' }
       ]
+    }
+  },
+  computed: {
+    // 检查当前用户是否有权限操作此结果（管理员或创建者）
+    hasPermission() {
+      const currentUser = auth.state.user;
+      if (!currentUser) return false;
+
+      // 检查是否是管理员
+      if (currentUser.role === 'ADMIN') return true;
+
+      // 检查是否是结果创建者
+      return currentUser.id === this.result.createdBy;
     }
   },
   created() {
@@ -153,6 +176,12 @@ export default {
       return typeMap[status] || 'default'
     },
     async onSelectStatus(action) {
+      // 先检查权限
+      if (!this.hasPermission) {
+        showFailToast('您没有权限执行此操作')
+        return
+      }
+
       try {
         await apiService.results.update(this.id, { status: action.value })
         this.result.status = action.value
@@ -163,6 +192,12 @@ export default {
       }
     },
     confirmDelete() {
+      // 先检查权限
+      if (!this.hasPermission) {
+        showFailToast('您没有权限执行此操作')
+        return
+      }
+
       showConfirmDialog({
         title: '确认删除',
         message: '确定要删除这个结果吗？此操作不可撤销！',
@@ -181,6 +216,12 @@ export default {
       })
     },
     goToEdit() {
+      // 先检查权限
+      if (!this.hasPermission) {
+        showFailToast('您没有权限执行此操作')
+        return
+      }
+      
       this.$router.push(`/result/edit/${this.id}`)
     },
     goToRelatedRequirement() {
@@ -214,14 +255,20 @@ export default {
   font-size: 14px;
 }
 
-.status-tag {
+.status-row {
+  display: flex;
+  align-items: center;
   margin-bottom: 8px;
-  display: inline-block;
 }
 
 .detail-content {
   padding: 16px;
   line-height: 1.6;
+}
+
+.detail-content p {
+  margin: 0;
+  white-space: pre-wrap;  /* 保留空白符和换行符 */
 }
 
 .loading-overlay {

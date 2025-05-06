@@ -68,7 +68,7 @@
               @click="goToRequirementDetail(item.id)"
             >
               <template #right-icon>
-                <van-tag :type="getApplicationStatusType(item.applicationStatus)">
+                <van-tag :type="getApplicationStatusType(item.applicationStatus)" class="custom-tag" round>
                   {{ getApplicationStatusText(item.applicationStatus) }}
                 </van-tag>
               </template>
@@ -76,8 +76,6 @@
           </van-list>
         </van-tab>
       </van-tabs>
-      
-      
     </div>
     
     <nav-bar />

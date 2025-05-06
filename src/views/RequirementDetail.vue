@@ -2,35 +2,47 @@
 <template>
   <div class="page">
     <header-bar :title="'需求详情'" />
-
+    
     <div class="page-content">
       <div class="detail-header">
         <h2>{{ requirement.title }}</h2>
         <div class="detail-meta">
+          <div class="status-row">
+            <van-tag :type="getStatusType(requirement.status)" class="custom-tag" round>
+              {{ getStatusText(requirement.status) }}
+            </van-tag>
+          </div>
           <span>发布时间: {{ formatDate(requirement.createdAt) }}</span>
-          <van-tag :type="getStatusType(requirement.status)" class="status-tag">
-            {{ getStatusText(requirement.status) }}
-          </van-tag>
         </div>
       </div>
-
+      
       <van-cell-group inset title="需求描述">
         <div class="detail-content">
-          <p>{{ requirement.description }}</p>
+          <!-- 使用v-html显示HTML格式的内容 -->
+          <p v-html="requirement.description"></p>
         </div>
       </van-cell-group>
-
-      <van-cell-group inset title="操作" style="margin-top: 16px;">
+      
+      <!-- 只有管理员或创建者才能看到操作选项 -->
+      <van-cell-group v-if="hasPermission" inset title="操作" style="margin-top: 16px;">
         <van-cell title="查看相关结果" is-link @click="goToResults" />
         <van-cell title="更改状态" is-link @click="showStatusActionSheet = true" />
         <van-cell title="删除需求" is-link @click="confirmDelete" />
       </van-cell-group>
+      <!-- 普通用户只能查看相关结果 -->
+      <van-cell-group v-else inset title="操作" style="margin-top: 16px;">
+        <van-cell title="查看相关结果" is-link @click="goToResults" />
+      </van-cell-group>
     </div>
-
+    
     <!-- 状态切换动作面板 -->
-    <van-action-sheet v-model:show="showStatusActionSheet" :actions="statusActions" cancel-text="取消"
-      @select="onSelectStatus" />
-
+    <van-action-sheet
+      v-model:show="showStatusActionSheet"
+      :actions="statusActions"
+      cancel-text="取消"
+      @select="onSelectStatus"
+    />
+    
     <div class="bottom-action-bar">
       <div @click="goToAgreement">
         <div class="icon-circle">
@@ -45,6 +57,7 @@
 import HeaderBar from '../components/HeaderBar.vue'
 import { showConfirmDialog, showSuccessToast, showFailToast } from 'vant'
 import apiService from '../api/api'
+import auth from '@/store/auth'
 
 export default {
   name: 'RequirementDetailPage',
@@ -79,6 +92,19 @@ export default {
       ]
     }
   },
+  computed: {
+    // 检查当前用户是否有权限操作此需求（管理员或创建者）
+    hasPermission() {
+      const currentUser = auth.state.user;
+      if (!currentUser) return false;
+
+      // 检查是否是管理员
+      if (currentUser.role === 'ADMIN') return true;
+
+      // 检查是否是需求创建者
+      return currentUser.id === this.requirement.createdBy;
+    }
+  },
   created() {
     this.fetchRequirementDetail()
   },
@@ -97,7 +123,7 @@ export default {
     },
     formatDate(dateString) {
       if (!dateString) return '未知'
-
+      
       // 格式化日期
       const date = new Date(dateString)
       return date.toLocaleString('zh-CN', {
@@ -129,6 +155,12 @@ export default {
       return typeMap[status] || 'default'
     },
     async onSelectStatus(action) {
+      // 先检查权限
+      if (!this.hasPermission) {
+        showFailToast('您没有权限执行此操作')
+        return
+      }
+
       try {
         await apiService.requirements.update(this.id, { status: action.value })
         this.requirement.status = action.value
@@ -139,6 +171,12 @@ export default {
       }
     },
     confirmDelete() {
+      // 先检查权限
+      if (!this.hasPermission) {
+        showFailToast('您没有权限执行此操作')
+        return
+      }
+
       showConfirmDialog({
         title: '确认删除',
         message: '确定要删除这个需求吗？此操作不可撤销！',
@@ -160,9 +198,9 @@ export default {
       // 将需求ID和状态作为查询参数传递给协议页面
       this.$router.push({
         path: '/agreement',
-        query: {
+        query: { 
           requirementId: this.id,
-          status: this.requirement.status
+          status: this.requirement.status 
         }
       })
     },
@@ -195,14 +233,20 @@ export default {
   font-size: 14px;
 }
 
-.status-tag {
+.status-row {
+  display: flex;
+  align-items: center;
   margin-bottom: 8px;
-  display: inline-block;
 }
 
 .detail-content {
   padding: 16px;
   line-height: 1.6;
+}
+
+.detail-content p {
+  margin: 0;
+  white-space: pre-wrap;  /* 保留空白符和换行符 */
 }
 
 .bottom-action-bar {

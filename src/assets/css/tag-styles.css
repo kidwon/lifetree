@@ -1,0 +1,47 @@
+/* 全局标签样式 */
+
+/* 自定义标签基础样式 */
+.custom-tag.van-tag,
+.custom-tag {
+  font-size: 14px;
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 各种类型标签的样式定制 */
+.van-tag--primary,
+.custom-tag.van-tag--primary {
+  background-color: #1989fa !important;
+  color: white !important;
+}
+
+.van-tag--warning,
+.custom-tag.van-tag--warning {
+  background-color: #ff976a !important;
+  color: white !important;
+}
+
+.van-tag--success,
+.custom-tag.van-tag--success {
+  background-color: #07c160 !important;
+  color: white !important;
+}
+
+.van-tag--danger,
+.custom-tag.van-tag--danger {
+  background-color: #ee0a24 !important;
+  color: white !important;
+}
+
+.van-tag--default,
+.custom-tag.van-tag--default {
+  background-color: #969799 !important;
+  color: white !important;
+}
+
+/* 标签在列表中的样式 */
+.van-cell .van-tag {
+  margin-right: 4px;
+}
