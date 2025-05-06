@@ -4,7 +4,7 @@ import axios from 'axios';
 
 // 创建axios实例
 const api = axios.create({
-  baseURL: 'http://192.168.31.123:8081/api', // 根据你的API服务器地址进行修改
+  baseURL: 'http://45.95.212.18:44058/api', // 根据你的API服务器地址进行修改
   timeout: 10000, // 请求超时时间
   headers: {
     'Content-Type': 'application/json'
