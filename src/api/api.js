@@ -118,17 +118,21 @@ const apiService = {
     getMyApplications: () => {
       return api.get('/requirements/my-applications');
     },
+    // 获取指定需求的所有申请 - 新增API
+    getApplicationsByRequirement: (id) => {
+      return api.get(`/requirements/${id}/applications`);
+    },
     // 接受需求（申请接受）
     acceptRequirement: (id) => {
       return api.post(`/requirements/${id}/accept`);
     },
-    // 同意申请
-    approveApplication: (id) => {
-      return api.post(`/requirements/${id}/approve`);
+    // 同意申请 - 更新API，需要传递applicationId
+    approveApplication: (id, applicationId) => {
+      return api.post(`/requirements/${id}/applications/${applicationId}/approve`);
     },
-    // 拒绝申请
-    rejectApplication: (id) => {
-      return api.post(`/requirements/${id}/reject`);
+    // 拒绝申请 - 更新API，需要传递applicationId
+    rejectApplication: (id, applicationId) => {
+      return api.post(`/requirements/${id}/applications/${applicationId}/reject`);
     }
   },
   

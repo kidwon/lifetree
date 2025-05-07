@@ -1,4 +1,4 @@
-// 协议页面 (Agreement.vue)
+// 修改后的协议页面 (Agreement.vue)
 <template>
   <div class="page">
     <header-bar :title="'协议'" />
@@ -32,39 +32,36 @@
       </div>
       
       <div class="agreement-action">
-        <!-- 需求状态为"确认中"时显示两个按钮 -->
-        <div v-if="requirementId && requirementStatus === 'CONFIRMING'" class="action-buttons">
-          <van-button 
-            type="success" 
-            @click="approveApplication"
-            :loading="loading"
-            class="action-button"
-          >
-            接受申请
-          </van-button>
-          <van-button 
-            type="danger" 
-            @click="rejectApplication"
-            :loading="loading"
-            class="action-button"
-          >
-            拒绝申请
-          </van-button>
-        </div>
-        
-        <!-- 其他状态时显示单个按钮 -->
+        <!-- 仅在当前用户不是需求创建者且需求状态为CREATED或IN_PROGRESS时显示"接受需求"按钮 -->
         <van-button 
-          v-else-if="requirementId && requirementStatus !== 'CONFIRMING'" 
+          v-if="requirementId && (requirementStatus === 'CREATED' || requirementStatus === 'IN_PROGRESS') && !isCreator && !alreadyApplied" 
           type="primary" 
           block 
           @click="acceptRequirement"
           :loading="loading"
         >
-          接受需求
+          申请接受需求
         </van-button>
         
+        <!-- 如果用户已经申请过这个需求，显示提示信息 -->
+        <div v-else-if="requirementId && alreadyApplied" class="info-text">
+          <p>您已经申请过这个需求，请等待确认</p>
+          <div style="margin-top: 16px;">
+            <van-button type="default" block @click="goBack">返回</van-button>
+          </div>
+        </div>
+        
         <!-- 不是从需求详情页进入时显示返回按钮 -->
-        <van-button v-else type="primary" block @click="goBack">返回</van-button>
+        <van-button v-else-if="!requirementId" type="primary" block @click="goBack">返回</van-button>
+        
+        <!-- 其他情况显示提示信息 -->
+        <div v-else class="info-text">
+          <p v-if="isCreator">这是您创建的需求，您可以在个人中心查看申请情况</p>
+          <p v-else-if="['COMPLETED', 'CANCELLED'].includes(requirementStatus)">此需求当前状态不可接受</p>
+          <div style="margin-top: 16px;">
+            <van-button type="default" block @click="goBack">返回</van-button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -74,6 +71,7 @@
 import HeaderBar from '../components/HeaderBar.vue'
 import { showSuccessToast, showFailToast } from 'vant'
 import apiService from '../api/api'
+import auth from '@/store/auth'
 
 export default {
   name: 'AgreementPage',
@@ -84,72 +82,83 @@ export default {
     return {
       requirementId: null,
       requirementStatus: null,
-      loading: false
+      requirementCreatedBy: null,
+      loading: false,
+      alreadyApplied: false
+    }
+  },
+  computed: {
+    // 检查当前用户是否是需求的创建者
+    isCreator() {
+      const currentUserId = auth.state.user?.id;
+      return this.requirementCreatedBy === currentUserId;
     }
   },
   created() {
     // 从路由查询参数中获取需求ID和状态
     if (this.$route.query.requirementId) {
-      this.requirementId = this.$route.query.requirementId
-      this.requirementStatus = this.$route.query.status
+      this.requirementId = this.$route.query.requirementId;
+      this.requirementStatus = this.$route.query.status;
+      
+      // 获取需求详情以确定创建者
+      this.fetchRequirementDetails();
+      
+      // 检查当前用户是否已申请此需求
+      this.checkUserApplication();
     }
   },
   methods: {
+    async fetchRequirementDetails() {
+      if (!this.requirementId) return;
+      
+      try {
+        const response = await apiService.requirements.getById(this.requirementId);
+        this.requirementCreatedBy = response.data.createdBy;
+      } catch (error) {
+        console.error('Error fetching requirement details:', error);
+      }
+    },
+    
+    // 检查当前用户是否已申请此需求
+    async checkUserApplication() {
+      if (!this.requirementId) return;
+      
+      try {
+        // 获取当前用户的所有申请
+        const response = await apiService.requirements.getMyApplications();
+        
+        // 检查是否已申请此需求
+        const hasApplied = response.data.some(app => 
+          app.id === this.requirementId && 
+          (app.applicationStatus === 'PENDING' || app.applicationStatus === 'APPROVED')
+        );
+        
+        this.alreadyApplied = hasApplied;
+      } catch (error) {
+        console.error('Error checking user applications:', error);
+      }
+    },
+    
     goBack() {
-      this.$router.back()
+      this.$router.back();
     },
+    
     async acceptRequirement() {
-      if (!this.requirementId) return
+      if (!this.requirementId) return;
       
-      this.loading = true
+      this.loading = true;
       try {
-        // 调用API将需求状态更改为"确认中"
-        await apiService.requirements.acceptRequirement(this.requirementId)
-        showSuccessToast('需求已接受，等待确认')
+        // 调用API申请接受需求
+        await apiService.requirements.acceptRequirement(this.requirementId);
+        showSuccessToast('申请已提交，等待确认');
         
         // 跳转回需求详情页面
-        this.$router.push(`/requirement/${this.requirementId}`)
+        this.$router.push(`/requirement/${this.requirementId}`);
       } catch (error) {
-        console.error('Error accepting requirement:', error)
-        showFailToast('接受需求失败: ' + (error.response?.data?.message || '未知错误'))
+        console.error('Error accepting requirement:', error);
+        showFailToast('接受需求失败: ' + (error.response?.data?.message || '未知错误'));
       } finally {
-        this.loading = false
-      }
-    },
-    async approveApplication() {
-      if (!this.requirementId) return
-      
-      this.loading = true
-      try {
-        // 调用API批准申请
-        await apiService.requirements.approveApplication(this.requirementId)
-        showSuccessToast('已同意申请')
-        
-        // 跳转回需求详情页面
-        this.$router.push(`/requirement/${this.requirementId}`)
-      } catch (error) {
-        console.error('Error approving application:', error)
-        showFailToast('同意申请失败: ' + (error.response?.data?.message || '未知错误'))
-      } finally {
-        this.loading = false
-      }
-    },
-    async rejectApplication() {
-      if (!this.requirementId) return
-      
-      this.loading = true
-      try {
-        // 调用API拒绝申请
-        await apiService.requirements.rejectApplication(this.requirementId)
-        showSuccessToast('已拒绝申请')
-        
-        // 跳转回需求详情页面
-        this.$router.push(`/requirement/${this.requirementId}`)
-      } catch (error) {
-        console.error('Error rejecting application:', error)
-        showFailToast('拒绝申请失败: ' + (error.response?.data?.message || '未知错误'))
-      } finally {
-        this.loading = false
+        this.loading = false;
       }
     }
   }
@@ -196,14 +205,9 @@ export default {
   padding-bottom: 20px;
 }
 
-/* 新增的并排按钮样式 */
-.action-buttons {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.action-button {
-  flex: 1;
+.info-text {
+  text-align: center;
+  color: #969799;
+  margin-bottom: 16px;
 }
 </style>

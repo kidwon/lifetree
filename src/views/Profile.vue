@@ -1,4 +1,4 @@
-// 个人信息页面 (Profile.vue)
+// 修改后的个人信息页面 (Profile.vue)
 <template>
   <div class="page">
     <header-bar :title="'个人信息'" :show-back="false" />
@@ -34,22 +34,26 @@
               v-for="item in myRequirements"
               :key="item.id"
               :title="item.title"
-              :label="getApplicantInfo(item)"
+              :label="getPendingApplicantsInfo(item)"
               is-link
               @click="goToRequirementDetail(item.id)"
             >
-              <template #right-icon v-if="item.status === 'CONFIRMING' && item.pendingApproval">
-                <div class="action-buttons">
-                  <van-button size="small" type="success" @click.stop="approveRequirement(item.id)">同意</van-button>
-                  <van-button size="small" type="danger" @click.stop="rejectRequirement(item.id)">拒绝</van-button>
-                </div>
+              <!-- 如果有待处理的申请，显示"查看申请"按钮 -->
+              <template #right-icon v-if="item.pendingApplicationsCount > 0">
+                <van-button 
+                  size="small" 
+                  type="primary" 
+                  @click.stop="viewApplications(item.id)"
+                >
+                  查看申请({{ item.pendingApplicationsCount }})
+                </van-button>
               </template>
             </van-cell>
           </van-list>
         </van-tab>
         
         <!-- 待确认的需求 Tab -->
-        <van-tab title="待确认的需求">
+        <van-tab title="我的申请">
           <div class="section-header my-applications-header">
             <div class="section-title">我申请的需求</div>
           </div>
@@ -77,6 +81,59 @@
         </van-tab>
       </van-tabs>
     </div>
+    
+    <!-- 申请列表弹窗 -->
+    <van-popup
+      v-model:show="showApplicationsPopup"
+      position="bottom"
+      :style="{ height: '60%' }"
+      round
+    >
+      <div class="popup-header">
+        <div class="popup-title">申请列表</div>
+        <van-icon name="cross" @click="showApplicationsPopup = false" />
+      </div>
+      
+      <div class="applications-list">
+        <van-loading v-if="applicationsLoading" vertical>加载中...</van-loading>
+        
+        <template v-else>
+          <van-empty v-if="applications.length === 0" description="暂无申请" />
+          
+          <van-cell-group v-else>
+            <van-cell 
+              v-for="app in applications" 
+              :key="app.id" 
+              :title="app.applicantName"
+              :label="formatDate(app.createdAt)"
+              :value="getApplicationStatusText(app.status)"
+              :value-class="getApplicationStatusClass(app.status)"
+            >
+              <template #right-icon v-if="app.status === 'PENDING'">
+                <div class="application-actions">
+                  <van-button 
+                    size="small" 
+                    type="success" 
+                    @click="approveApplication(app.requirementId, app.id)"
+                    :loading="approvingId === app.id"
+                  >
+                    同意
+                  </van-button>
+                  <van-button 
+                    size="small" 
+                    type="danger" 
+                    @click="rejectApplication(app.requirementId, app.id)"
+                    :loading="rejectingId === app.id"
+                  >
+                    拒绝
+                  </van-button>
+                </div>
+              </template>
+            </van-cell>
+          </van-cell-group>
+        </template>
+      </div>
+    </van-popup>
     
     <nav-bar />
   </div>
@@ -110,7 +167,15 @@ export default {
       // 我申请接受的需求
       pendingRequirements: [],
       pendingRequirementsLoading: false,
-      pendingRequirementsFinished: false
+      pendingRequirementsFinished: false,
+      // 申请列表
+      showApplicationsPopup: false,
+      applications: [],
+      applicationsLoading: false,
+      currentRequirementId: null,
+      // 操作状态
+      approvingId: null,
+      rejectingId: null
     }
   },
   created() {
@@ -154,38 +219,72 @@ export default {
       }
     },
     
-    // 同意需求申请
-    async approveRequirement(requirementId) {
+    // 加载指定需求的所有申请
+    async loadApplications(requirementId) {
+      this.applicationsLoading = true
+      this.currentRequirementId = requirementId
+      
       try {
-        await apiService.requirements.approveApplication(requirementId)
+        const response = await apiService.requirements.getApplicationsByRequirement(requirementId)
+        this.applications = response.data
+      } catch (error) {
+        console.error('Error loading applications:', error)
+        showFailToast('加载申请列表失败')
+      } finally {
+        this.applicationsLoading = false
+      }
+    },
+    
+    // 查看申请列表
+    viewApplications(requirementId) {
+      this.loadApplications(requirementId)
+      this.showApplicationsPopup = true
+    },
+    
+    // 同意需求申请
+    async approveApplication(requirementId, applicationId) {
+      this.approvingId = applicationId
+      
+      try {
+        await apiService.requirements.approveApplication(requirementId, applicationId)
         showSuccessToast('已同意申请')
         
-        // 刷新数据
+        // 刷新申请列表
+        this.loadApplications(requirementId)
+        // 刷新需求列表
         this.loadMyRequirements()
       } catch (error) {
         console.error('Error approving application:', error)
         showFailToast('操作失败')
+      } finally {
+        this.approvingId = null
       }
     },
     
     // 拒绝需求申请
-    async rejectRequirement(requirementId) {
+    async rejectApplication(requirementId, applicationId) {
+      this.rejectingId = applicationId
+      
       try {
-        await apiService.requirements.rejectApplication(requirementId)
+        await apiService.requirements.rejectApplication(requirementId, applicationId)
         showSuccessToast('已拒绝申请')
         
-        // 刷新数据
+        // 刷新申请列表
+        this.loadApplications(requirementId)
+        // 刷新需求列表
         this.loadMyRequirements()
       } catch (error) {
         console.error('Error rejecting application:', error)
         showFailToast('操作失败')
+      } finally {
+        this.rejectingId = null
       }
     },
     
-    // 获取申请者信息显示文本
-    getApplicantInfo(requirement) {
-      if (requirement.applicant && requirement.status === 'CONFIRMING') {
-        return `申请者: ${requirement.applicant.name}`
+    // 获取申请者信息显示文本 - 修改为显示申请数量
+    getPendingApplicantsInfo(requirement) {
+      if (requirement.pendingApplicationsCount > 0) {
+        return `${requirement.pendingApplicationsCount}人申请 | 状态: ${this.getStatusText(requirement.status)}`
       }
       return `状态: ${this.getStatusText(requirement.status)}`
     },
@@ -220,6 +319,30 @@ export default {
         'REJECTED': 'danger'
       }
       return typeMap[status] || 'default'
+    },
+    
+    // 获取申请状态CSS类（用于显示颜色）
+    getApplicationStatusClass(status) {
+      const classMap = {
+        'PENDING': 'status-pending',
+        'APPROVED': 'status-approved',
+        'REJECTED': 'status-rejected'
+      }
+      return classMap[status] || ''
+    },
+    
+    // 格式化日期
+    formatDate(dateString) {
+      if (!dateString) return '';
+      
+      const date = new Date(dateString);
+      return date.toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
     },
     
     // 跳转到需求详情页
@@ -311,5 +434,44 @@ export default {
 :deep(.van-button) {
   position: relative;
   z-index: 2;
+}
+
+/* 弹窗样式 */
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #ebedf0;
+}
+
+.popup-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #323233;
+}
+
+.applications-list {
+  padding: 16px;
+  height: calc(100% - 60px);
+  overflow-y: auto;
+}
+
+.application-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* 申请状态颜色 */
+.status-pending {
+  color: #ff976a;
+}
+
+.status-approved {
+  color: #07c160;
+}
+
+.status-rejected {
+  color: #ee0a24;
 }
 </style>

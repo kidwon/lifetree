@@ -1,0 +1,11 @@
+{
+  "appId": "com.lifetree.app",
+  "appName": "LifeTree",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "plugins": {
+    "NativeBiometric": {
+      "faceId": true
+    }
+  }
+}

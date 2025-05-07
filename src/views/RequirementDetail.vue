@@ -1,38 +1,85 @@
-// 需求详情页面 (RequirementDetail.vue)
+// 修改后的需求详情页面 (RequirementDetail.vue)
 <template>
   <div class="page">
     <header-bar :title="'需求详情'" />
     
     <div class="page-content">
-      <div class="detail-header">
-        <h2>{{ requirement.title }}</h2>
-        <div class="detail-meta">
-          <div class="status-row">
-            <van-tag :type="getStatusType(requirement.status)" class="custom-tag" round>
-              {{ getStatusText(requirement.status) }}
-            </van-tag>
+      <van-loading v-if="loading" vertical class="loading-overlay">加载中...</van-loading>
+      
+      <template v-else>
+        <div class="detail-header">
+          <h2>{{ requirement.title }}</h2>
+          <div class="detail-meta">
+            <div class="status-row">
+              <van-tag :type="getStatusType(requirement.status)" class="custom-tag" round>
+                {{ getStatusText(requirement.status) }}
+              </van-tag>
+              <span v-if="pendingApplicationsCount > 0" class="application-count">
+                {{ pendingApplicationsCount }}人申请
+              </span>
+            </div>
+            <span>发布时间: {{ formatDate(requirement.createdAt) }}</span>
           </div>
-          <span>发布时间: {{ formatDate(requirement.createdAt) }}</span>
         </div>
-      </div>
-      
-      <van-cell-group inset title="需求描述">
-        <div class="detail-content">
-          <!-- 使用v-html显示HTML格式的内容 -->
-          <p v-html="requirement.description"></p>
-        </div>
-      </van-cell-group>
-      
-      <!-- 只有管理员或创建者才能看到操作选项 -->
-      <van-cell-group v-if="hasPermission" inset title="操作" style="margin-top: 16px;">
-        <van-cell title="查看相关结果" is-link @click="goToResults" />
-        <van-cell title="更改状态" is-link @click="showStatusActionSheet = true" />
-        <van-cell title="删除需求" is-link @click="confirmDelete" />
-      </van-cell-group>
-      <!-- 普通用户只能查看相关结果 -->
-      <van-cell-group v-else inset title="操作" style="margin-top: 16px;">
-        <van-cell title="查看相关结果" is-link @click="goToResults" />
-      </van-cell-group>
+        
+        <van-cell-group inset title="需求描述">
+          <div class="detail-content">
+            <!-- 使用v-html显示HTML格式的内容 -->
+            <p v-html="requirement.description"></p>
+          </div>
+        </van-cell-group>
+        
+        <!-- 申请人列表 - 仅对需求创建者显示 -->
+        <van-cell-group 
+          v-if="hasPermission && pendingApplicationsCount > 0" 
+          inset 
+          title="申请人列表" 
+          style="margin-top: 16px;"
+        >
+          <van-loading v-if="applicationsLoading" size="24px">加载中...</van-loading>
+          
+          <template v-else>
+            <van-cell 
+              v-for="app in pendingApplications" 
+              :key="app.id"
+              :title="app.applicantName"
+              :label="formatDate(app.createdAt)"
+            >
+              <template #right-icon>
+                <div class="application-actions">
+                  <van-button 
+                    size="small" 
+                    type="success" 
+                    @click="approveApplication(app.id)"
+                    :loading="approvingId === app.id"
+                  >
+                    同意
+                  </van-button>
+                  <van-button 
+                    size="small" 
+                    type="danger" 
+                    @click="rejectApplication(app.id)"
+                    :loading="rejectingId === app.id"
+                  >
+                    拒绝
+                  </van-button>
+                </div>
+              </template>
+            </van-cell>
+          </template>
+        </van-cell-group>
+        
+        <!-- 只有管理员或创建者才能看到操作选项 -->
+        <van-cell-group v-if="hasPermission" inset title="操作" style="margin-top: 16px;">
+          <van-cell title="查看相关结果" is-link @click="goToResults" />
+          <van-cell title="更改状态" is-link @click="showStatusActionSheet = true" />
+          <van-cell title="删除需求" is-link @click="confirmDelete" />
+        </van-cell-group>
+        <!-- 普通用户只能查看相关结果 -->
+        <van-cell-group v-else inset title="操作" style="margin-top: 16px;">
+          <van-cell title="查看相关结果" is-link @click="goToResults" />
+        </van-cell-group>
+      </template>
     </div>
     
     <!-- 状态切换动作面板 -->
@@ -82,14 +129,18 @@ export default {
         updatedAt: ''
       },
       loading: true,
+      pendingApplicationsCount: 0,
+      pendingApplications: [],
+      applicationsLoading: false,
       showStatusActionSheet: false,
       statusActions: [
         { name: '已创建', value: 'CREATED' },
-        { name: '确认中', value: 'CONFIRMING' },
         { name: '进行中', value: 'IN_PROGRESS' },
         { name: '已完成', value: 'COMPLETED' },
         { name: '已取消', value: 'CANCELLED' }
-      ]
+      ],
+      approvingId: null,
+      rejectingId: null
     }
   },
   computed: {
@@ -114,6 +165,11 @@ export default {
       try {
         const response = await apiService.requirements.getById(this.id)
         this.requirement = response.data
+        
+        // 如果是需求创建者，获取申请列表
+        if (this.hasPermission) {
+          this.fetchApplications()
+        }
       } catch (error) {
         console.error('Error fetching requirement detail:', error)
         showFailToast('获取需求详情失败')
@@ -121,6 +177,59 @@ export default {
         this.loading = false
       }
     },
+    
+    // 获取申请列表
+    async fetchApplications() {
+      this.applicationsLoading = true
+      try {
+        const response = await apiService.requirements.getApplicationsByRequirement(this.id)
+        
+        // 只保留待处理的申请
+        this.pendingApplications = response.data.filter(app => app.status === 'PENDING')
+        this.pendingApplicationsCount = this.pendingApplications.length
+      } catch (error) {
+        console.error('Error fetching applications:', error)
+      } finally {
+        this.applicationsLoading = false
+      }
+    },
+    
+    // 同意申请
+    async approveApplication(applicationId) {
+      this.approvingId = applicationId
+      
+      try {
+        await apiService.requirements.approveApplication(this.id, applicationId)
+        showSuccessToast('已同意申请')
+        
+        // 刷新数据
+        this.fetchRequirementDetail()
+      } catch (error) {
+        console.error('Error approving application:', error)
+        showFailToast('操作失败: ' + (error.response?.data?.message || '未知错误'))
+      } finally {
+        this.approvingId = null
+      }
+    },
+    
+    // 拒绝申请
+    async rejectApplication(applicationId) {
+      this.rejectingId = applicationId
+      
+      try {
+        await apiService.requirements.rejectApplication(this.id, applicationId)
+        showSuccessToast('已拒绝申请')
+        
+        // 刷新数据
+        this.fetchRequirementDetail()
+      } catch (error) {
+        console.error('Error rejecting application:', error)
+        showFailToast('操作失败: ' + (error.response?.data?.message || '未知错误'))
+      } finally {
+        this.rejectingId = null
+      }
+    },
+    
     formatDate(dateString) {
       if (!dateString) return '未知'
       
@@ -239,6 +348,12 @@ export default {
   margin-bottom: 8px;
 }
 
+.application-count {
+  margin-left: 10px;
+  color: #ff976a;
+  font-weight: bold;
+}
+
 .detail-content {
   padding: 16px;
   line-height: 1.6;
@@ -276,5 +391,18 @@ export default {
 
 .icon-circle .van-icon {
   color: #323233;
+}
+
+.application-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.loading-overlay {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 100;
 }
 </style>

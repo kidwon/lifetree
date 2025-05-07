@@ -1,3 +1,4 @@
+// Login.vue - 完整代码，支持生物识别登录
 <template>
   <div class="page">
     <header-bar :title="'登录'" :show-back="false" />
@@ -68,28 +69,7 @@ import HeaderBar from '@/components/HeaderBar.vue';
 import { showToast, showFailToast } from 'vant';
 import auth from '@/store/auth';
 import { ref, onMounted } from 'vue';
-
-// 导入生物识别功能（在真实环境中需要安装@capacitor/biometrics包）
-// 在开发环境中，我们模拟这个功能
-const BiometricsSimulation = {
-  isAvailable: async () => {
-    // 这里模拟检查设备是否支持生物识别
-    // 在真实环境中，这会实际检查设备的硬件支持
-    return { has: true, types: ['faceId'] };
-  },
-  authenticate: async () => {
-    // 模拟生物识别验证过程
-    // 在真实环境中，这会调用设备的原生生物识别API
-    return new Promise((resolve, reject) => {
-      // 模拟用户确认对话框
-      if (confirm('模拟Face ID验证。要模拟成功验证吗？')) {
-        resolve({ verified: true });
-      } else {
-        reject(new Error('用户取消了生物识别验证'));
-      }
-    });
-  }
-};
+import apiService from '@/api/api';
 
 export default {
   name: 'LoginPage',
@@ -103,15 +83,46 @@ export default {
     const biometricsAvailable = ref(false);
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     
-    // 检查生物识别可用性
+    // 检查平台是否支持生物识别
+    const isPlatformSupported = () => {
+      return typeof window !== 'undefined' && 
+             window.Capacitor && 
+             window.Capacitor.isNativePlatform();
+    };
+    
+    // 检查生物识别是否可用
     const checkBiometricAvailability = async () => {
       try {
-        // 在真实环境中使用：const { has, types } = await Biometrics.isAvailable();
-        const { has, types } = await BiometricsSimulation.isAvailable();
-        return { has, types };
+        if (!isPlatformSupported()) {
+          console.log('非原生环境，生物识别不可用');
+          return false;
+        }
+        
+        const { NativeBiometric } = await import('@capgo/capacitor-native-biometric');
+        
+        // 首先检查设备是否支持生物识别
+        const result = await NativeBiometric.isAvailable();
+        console.log('生物识别可用性检查结果:', result);
+        
+        if (!result.isAvailable) {
+          console.log('设备不支持生物识别');
+          return false;
+        }
+        
+        // 然后检查是否有存储的凭据
+        try {
+          const credentials = await NativeBiometric.getCredentials({
+            server: "lifetree-app",
+          });
+          console.log('生物识别凭据检查:', credentials ? '找到凭据' : '未找到凭据');
+          return Boolean(credentials && credentials.username && credentials.password);
+        } catch (credError) {
+          console.error('获取生物识别凭据失败:', credError);
+          return false;
+        }
       } catch (error) {
-        console.error('生物识别验证不可用:', error);
-        return { has: false, types: [] };
+        console.error('检查生物识别可用性失败:', error);
+        return false;
       }
     };
     
@@ -119,78 +130,135 @@ export default {
     const loginWithBiometrics = async () => {
       loading.value = true;
       try {
-        // 在真实环境中使用：
-        // const result = await Biometrics.authenticate({
-        //   reason: "登录到生命树应用",
-        //   title: "生物识别验证",
-        // });
-        const result = await BiometricsSimulation.authenticate({
+        if (!isPlatformSupported()) {
+          throw new Error('非原生环境，无法使用生物识别');
+        }
+        
+        // 导入插件
+        const { NativeBiometric } = await import('@capgo/capacitor-native-biometric');
+        
+        // 检查生物识别是否可用
+        const available = await NativeBiometric.isAvailable();
+        console.log('生物识别可用性检查:', available);
+        
+        if (!available.isAvailable) {
+          throw new Error('设备不支持生物识别');
+        }
+        
+        // 验证用户生物识别
+        console.log('开始生物识别验证...');
+        await NativeBiometric.verifyIdentity({
           reason: "登录到生命树应用",
           title: "生物识别验证",
+          subtitle: "请使用Face ID进行验证",
+          description: "这将允许您快速安全地登录"
+        });
+        console.log('生物识别验证成功');
+        
+        // 获取存储的凭据
+        console.log('尝试获取存储的凭据...');
+        const credentials = await NativeBiometric.getCredentials({
+          server: "lifetree-app",
+        });
+        console.log('获取到凭据:', credentials ? '成功' : '失败');
+        
+        if (!credentials || !credentials.username || !credentials.password) {
+          throw new Error('未找到有效的生物识别凭据');
+        }
+        
+        // 使用获取到的凭据进行常规登录
+        console.log('使用凭据尝试登录...');
+        
+        // 直接调用登录API
+        const loginResponse = await apiService.auth.login({
+          email: credentials.username,
+          password: credentials.password
         });
         
-        if (result.verified) {
-          // 获取存储的用户凭据
-          const storedEmail = localStorage.getItem('biometricEmail');
-          const storedToken = localStorage.getItem('biometricToken');
-          const storedUser = localStorage.getItem('biometricUser');
+        if (loginResponse && loginResponse.data) {
+          const { user, token } = loginResponse.data;
           
-          if (storedEmail && storedToken && storedUser) {
-            // 设置用户数据，无需密码
-            localStorage.setItem('user', storedUser);
-            localStorage.setItem('token', storedToken);
-            
-            // 更新认证状态
-            auth.state.user = JSON.parse(storedUser);
-            auth.state.token = storedToken;
-            auth.state.isAuthenticated = true;
-            
-            showToast({
-              message: '生物识别登录成功',
-              type: 'success'
-            });
-            
-            // 导航到主页或重定向路径
-            const redirectPath = sessionStorage.getItem('redirectPath') || '/';
-            sessionStorage.removeItem('redirectPath');
-            setTimeout(() => {
-              window.location.href = redirectPath;
-            }, 1000);
-          } else {
-            // 尚未存储凭据，提示用户需要先登录一次
-            showToast({
-              message: '请先使用账号密码登录一次以启用生物识别登录',
-              type: 'info'
-            });
-          }
+          // 保存用户信息和令牌
+          localStorage.setItem('user', JSON.stringify(user));
+          localStorage.setItem('token', token);
+          
+          // 更新认证状态
+          auth.state.user = user;
+          auth.state.token = token;
+          auth.state.isAuthenticated = true;
+          
+          showToast({
+            message: '生物识别登录成功',
+            type: 'success'
+          });
+          
+          // 导航到主页或重定向路径
+          const redirectPath = sessionStorage.getItem('redirectPath') || '/';
+          sessionStorage.removeItem('redirectPath');
+          setTimeout(() => {
+            window.location.href = redirectPath;
+          }, 1000);
+        } else {
+          throw new Error('登录响应无效');
         }
       } catch (error) {
-        console.error('生物识别验证错误:', error);
-        showFailToast('生物识别验证失败，请使用账号密码登录');
+        console.error('生物识别登录详细错误:', error);
+        showFailToast('生物识别登录失败: ' + (error.message || '请使用账号密码登录'));
+        // 清空密码字段以防止错误登录尝试
+        password.value = '';
       } finally {
         loading.value = false;
       }
     };
     
-    // 组件挂载时检查生物识别是否可用
-    onMounted(async () => {
-      const { has } = await checkBiometricAvailability();
-      // 只有当设备支持生物识别且有存储的令牌时才显示生物识别登录选项
-      biometricsAvailable.value = has && localStorage.getItem('biometricToken');
-    });
-    
+    // 常规登录
     const onSubmit = async (values) => {
       loading.value = true;
       try {
-        await auth.login({
+        console.log('开始常规登录...');
+        
+        // 直接调用API登录
+        const response = await apiService.auth.login({
           email: values.email,
           password: values.password
         });
         
-        // 保存用户凭据用于生物识别登录
-        localStorage.setItem('biometricEmail', values.email);
-        localStorage.setItem('biometricToken', localStorage.getItem('token'));
-        localStorage.setItem('biometricUser', localStorage.getItem('user'));
+        console.log('登录响应:', response ? '成功' : '失败');
+        
+        if (!response || !response.data) {
+          throw new Error('登录响应无效');
+        }
+        
+        const { user, token } = response.data;
+        
+        // 保存用户信息和令牌
+        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('token', token);
+        
+        // 更新认证状态
+        auth.state.user = user;
+        auth.state.token = token;
+        auth.state.isAuthenticated = true;
+        
+        // 尝试保存生物识别凭据
+        try {
+          if (isPlatformSupported()) {
+            const { NativeBiometric } = await import('@capgo/capacitor-native-biometric');
+            console.log('尝试保存生物识别凭据...');
+            await NativeBiometric.setCredentials({
+              username: values.email,
+              password: values.password,
+              server: "lifetree-app"
+            });
+            console.log('生物识别凭据保存成功');
+            
+            // 更新生物识别可用状态
+            biometricsAvailable.value = true;
+          }
+        } catch (error) {
+          console.error('保存生物识别凭据失败:', error);
+          // 继续处理，不影响登录过程
+        }
         
         // 登录成功提示
         showToast({
@@ -205,6 +273,7 @@ export default {
           window.location.href = redirectPath;
         }, 1000);
       } catch (error) {
+        console.error('登录失败详细错误:', error);
         // 登录失败提示
         const errorMsg = error.response?.data?.error || '登录失败，请检查您的凭据';
         showFailToast(errorMsg);
@@ -212,6 +281,36 @@ export default {
         loading.value = false;
       }
     };
+    
+    // 测试API连接
+    const testApiConnection = async () => {
+      try {
+        // 调用一个简单的API端点，如健康检查
+        const response = await fetch(apiService.baseURL + '/health');
+        console.log('API连接测试结果:', response.status);
+        if (response.ok) {
+          console.log('API连接成功');
+        } else {
+          console.log('API连接失败');
+        }
+      } catch (error) {
+        console.error('API连接测试错误:', error);
+      }
+    };
+    
+    // 组件挂载时的初始化
+    onMounted(async () => {
+      console.log('Login组件已挂载');
+      console.log('检查平台:', isPlatformSupported() ? '原生平台' : '浏览器');
+      
+      // 测试API连接
+      await testApiConnection();
+      
+      // 检查生物识别是否可用
+      const isAvailable = await checkBiometricAvailability();
+      console.log('生物识别可用性:', isAvailable);
+      biometricsAvailable.value = isAvailable;
+    });
     
     return {
       email,
