@@ -23,6 +23,8 @@ module.exports = {
     // 设置默认端口
     port: 8080,
     // 设置代理
-    proxy: null
+    proxy: null,
+    // https: true // 这会使用自签名证书
+
   }
 }
