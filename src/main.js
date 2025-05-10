@@ -23,12 +23,17 @@ import {
   Popup,
   Picker,
   DropdownMenu,
-  DropdownItem
+  DropdownItem,
+  Switch,
+  Stepper,
+  Search
 } from 'vant'
 import 'vant/lib/index.css'
 // 导入全局标签样式
 import './assets/css/tag-styles.css'
 import axios from 'axios'
+// 导入日志控制台组件
+import ConsoleLogger from './components/ConsoleLogger.vue'
 
 // 创建Vue应用实例
 const app = createApp(App)
@@ -59,6 +64,12 @@ app.use(Popup)
 app.use(Picker)
 app.use(DropdownMenu)
 app.use(DropdownItem)
+app.use(Switch)
+app.use(Stepper)
+app.use(Search)
+
+// 注册全局组件
+app.component('ConsoleLogger', ConsoleLogger)
 
 // 设置全局变量
 app.config.globalProperties.$axios = axios

@@ -4,7 +4,8 @@ import axios from 'axios';
 
 // 创建axios实例
 const api = axios.create({
-  baseURL: 'http://45.95.212.18:44058/api', // 根据你的API服务器地址进行修改
+  baseURL: 'https://api.u252116.nyat.app:44058/api', // 根据你的API服务器地址进行修改
+  // baseURL: 'http://192.168.31.123:8081/api', // 根据你的API服务器地址进行修改
   timeout: 10000, // 请求超时时间
   headers: {
     'Content-Type': 'application/json'
@@ -60,6 +61,11 @@ api.interceptors.response.use(
 
 // API服务封装
 const apiService = {
+  // 健康检查接口
+  health: () => {
+    return api.get('/health');
+  },
+  
   // 用户相关API
   auth: {
     // 用户注册
@@ -69,6 +75,26 @@ const apiService = {
     // 用户登录
     login: (credentials) => {
       return api.post('/auth/login', credentials);
+    },
+    // WebAuthn 相关 API - 修复端点路径
+    // 获取注册选项 - 检查路径是否正确
+    getRegistrationOptions: (data) => {
+      return api.post('/webauthn/registration/options', data);
+    },
+    
+    // 提交注册结果 - 检查路径是否正确
+    submitRegistration: (data) => {
+      return api.post('/webauthn/registration/result', data);
+    },
+    
+    // 获取认证选项 - 检查路径是否正确
+    webAuthnAuthOptions: (data) => {
+      return api.post('/webauthn/authentication/options', data);
+    },
+    
+    // 提交认证结果，完成登录 - 检查路径是否正确
+    webAuthnLogin: (data) => {
+      return api.post('/webauthn/authentication/result', data);
     }
   },
   
@@ -118,7 +144,7 @@ const apiService = {
     getMyApplications: () => {
       return api.get('/requirements/my-applications');
     },
-    // 获取指定需求的所有申请 - 新增API
+    // 获取指定需求的所有申请
     getApplicationsByRequirement: (id) => {
       return api.get(`/requirements/${id}/applications`);
     },
@@ -126,11 +152,11 @@ const apiService = {
     acceptRequirement: (id) => {
       return api.post(`/requirements/${id}/accept`);
     },
-    // 同意申请 - 更新API，需要传递applicationId
+    // 同意申请
     approveApplication: (id, applicationId) => {
       return api.post(`/requirements/${id}/applications/${applicationId}/approve`);
     },
-    // 拒绝申请 - 更新API，需要传递applicationId
+    // 拒绝申请
     rejectApplication: (id, applicationId) => {
       return api.post(`/requirements/${id}/applications/${applicationId}/reject`);
     }
@@ -165,6 +191,18 @@ const apiService = {
     // 删除结果
     delete: (id) => {
       return api.delete(`/results/${id}`);
+    }
+  },
+  
+  // 管理员相关API
+  admin: {
+    // 获取系统统计信息
+    getSystemStats: () => {
+      return api.get('/admin/stats');
+    },
+    // 获取系统日志
+    getSystemLogs: (page = 1, limit = 20) => {
+      return api.get(`/admin/logs?page=${page}&limit=${limit}`);
     }
   }
 };

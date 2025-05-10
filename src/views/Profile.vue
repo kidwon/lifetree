@@ -1,4 +1,4 @@
-// 修改后的个人信息页面 (Profile.vue)
+// 更新个人信息页面 - 添加管理员控制台入口
 <template>
   <div class="page">
     <header-bar :title="'个人信息'" :show-back="false" />
@@ -11,6 +11,13 @@
       <van-cell-group inset>
         <van-cell title="用户名" :value="user.name" />
         <van-cell title="邮箱" :value="user.email" />
+        <van-cell title="角色" :value="getRoleText(user.role)" />
+        <!-- 管理员专属入口 -->
+        <van-cell v-if="isAdmin" title="管理控制台" is-link @click="goToAdminDashboard">
+          <template #right-icon>
+            <van-icon name="setting-o" class="admin-icon" />
+          </template>
+        </van-cell>
       </van-cell-group>
 
       <div class="action-buttons logout-button">
@@ -157,7 +164,8 @@ export default {
       user: {
         id: '',
         name: '',
-        email: ''
+        email: '',
+        role: ''
       },
       activeTab: 0,
       // 我的需求（别人申请接受的）
@@ -178,13 +186,33 @@ export default {
       rejectingId: null
     }
   },
+  computed: {
+    // 检查当前用户是否是管理员
+    isAdmin() {
+      return this.user.role === 'ADMIN';
+    }
+  },
   created() {
     this.fetchUserData()
   },
   methods: {
     fetchUserData() {
       // 从store中获取用户信息
-      this.user = auth.state.user || { name: '未知用户', email: '未知邮箱' }
+      this.user = auth.state.user || { name: '未知用户', email: '未知邮箱', role: 'USER' }
+    },
+    
+    // 获取角色文本
+    getRoleText(role) {
+      const roleMap = {
+        'USER': '普通用户',
+        'ADMIN': '管理员'
+      }
+      return roleMap[role] || '未知角色'
+    },
+    
+    // 导航到管理控制台
+    goToAdminDashboard() {
+      this.$router.push('/admin')
     },
     
     // 加载我创建的需求（别人申请接受的）
@@ -473,5 +501,11 @@ export default {
 
 .status-rejected {
   color: #ee0a24;
+}
+
+/* 管理员图标样式 */
+.admin-icon {
+  color: #1989fa;
+  font-size: 18px;
 }
 </style>

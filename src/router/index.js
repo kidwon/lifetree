@@ -1,4 +1,4 @@
-// router/index.js - 更新版本，添加结果编辑路由
+// router/index.js - 更新版本，添加管理员路由
 
 import { createRouter, createWebHashHistory } from 'vue-router'
 import auth from '@/store/auth'
@@ -19,6 +19,10 @@ import ResultsByRequirement from '../views/ResultsByRequirement.vue'
 // 导入认证页面
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
+// 导入管理员页面
+import AdminDashboard from '../views/AdminDashboard.vue'
+import AdminUsers from '../views/AdminUsers.vue'
+import AdminSettings from '../views/AdminSettings.vue'
 
 // 定义路由
 const routes = [
@@ -110,6 +114,25 @@ const routes = [
     component: Register,
     meta: { guest: true }
   },
+  // 管理员路由
+  {
+    path: '/admin',
+    name: 'AdminDashboard',
+    component: AdminDashboard,
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/users',
+    name: 'AdminUsers',
+    component: AdminUsers,
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/settings',
+    name: 'AdminSettings',
+    component: AdminSettings,
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
   // 重定向
   {
     path: '/:pathMatch(.*)*',
@@ -126,6 +149,19 @@ const router = createRouter({
 
 // 全局路由守卫
 router.beforeEach((to, from, next) => {
+  // 需要管理员权限的页面
+  if (to.matched.some(record => record.meta.requiresAdmin)) {
+    // 检查用户是否是管理员
+    const user = auth.state.user;
+    if (!user || user.role !== 'ADMIN') {
+      // 用户不是管理员，重定向到首页
+      next({
+        path: '/'
+      });
+      return;
+    }
+  }
+
   // 需要认证的页面
   if (to.matched.some(record => record.meta.requiresAuth)) {
     // 检查用户是否已登录

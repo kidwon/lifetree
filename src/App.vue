@@ -1,60 +1,98 @@
 <template>
   <div id="app">
-    <!-- 路由视图 -->
-    <router-view/>
+    <router-view></router-view>
+    
+    <!-- 悬浮日志开关按钮，仅管理员可见 -->
+    <div v-if="isAdmin" class="logger-toggle" @click="toggleLogger">
+      <van-icon :name="loggerVisible ? 'close' : 'description'" size="20" />
+    </div>
+    
+    <!-- 全局日志控制台，仅在开启时显示 -->
+    <console-logger v-if="loggerVisible" />
   </div>
 </template>
 
 <script>
+import ConsoleLogger from './components/ConsoleLogger.vue'
+import auth from './store/auth'
+
 export default {
-  name: 'App'
+  name: 'App',
+  components: {
+    ConsoleLogger
+  },
+  data() {
+    return {
+      loggerVisible: false
+    }
+  },
+  computed: {
+    isAdmin() {
+      return auth.state.user?.role === 'ADMIN';
+    }
+  },
+  created() {
+    console.log('应用初始化完成');
+  },
+  methods: {
+    toggleLogger() {
+      this.loggerVisible = !this.loggerVisible;
+      console.log(`全局日志控制台已${this.loggerVisible ? '开启' : '关闭'}`);
+      
+      if (this.loggerVisible) {
+        // 触发一些示例日志
+        console.log('日志控制台已激活');
+        console.info('这是一条信息日志');
+        setTimeout(() => {
+          console.warn('这是一条警告日志');
+        }, 500);
+        setTimeout(() => {
+          console.error('这是一条错误日志');
+        }, 1000);
+      }
+    }
+  }
 }
 </script>
 
 <style>
-/* 使用@font-face引入崇羲篆体 */
-@font-face {
-  font-family: 'ChongXiZhuanTi';
-  src: url('./assets/fonts/ChongXiZhuanTi.otf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
-}
-
-/* 小篆字体类 */
-.small-seal-font {
-  font-family: 'ChongXiZhuanTi', sans-serif;
-}
-
-/* 为标题专门定制的小篆样式 */
-.header-title.small-seal-font {
-  letter-spacing: 2px;
-}
-
-#app {
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  color: #2c3e50;
-  max-width: 600px;
-  margin: 0 auto;
-  min-height: 100vh;
-}
-
-body, html {
+body {
   margin: 0;
   padding: 0;
-  height: 100%;
-  width: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica,
+    Segoe UI, Arial, Roboto, 'PingFang SC', 'miui', 'Hiragino Sans GB', 'Microsoft Yahei',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f7f8fa;
 }
 
 /* 全局样式 */
 .page {
-  padding: 46px 0 50px;
-  box-sizing: border-box;
   min-height: 100vh;
+  background-color: #f7f8fa;
 }
 
-.page-content {
-  padding: 15px;
+/* 仿书法字体样式 */
+.small-seal-font {
+  font-family: 'SimSun', serif;
+  font-weight: bold;
+}
+
+/* 悬浮日志开关按钮样式 */
+.logger-toggle {
+  position: fixed;
+  right: 16px;
+  bottom: 70px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: rgba(25, 137, 250, 0.8);
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 999;
 }
 </style>
