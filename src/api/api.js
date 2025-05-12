@@ -1,9 +1,10 @@
-// src/api/api.js - 更新API服务以支持新功能
+// src/api/api.js - 更新API服务以支持协议功能
 
 import axios from 'axios';
 
 // 创建axios实例
 const api = axios.create({
+  // baseURL: 'http://192.168.31.123:8081/api', // 根据你的API服务器地址进行修改
   baseURL: 'https://api.u252116.nyat.app:44058/api', // 根据你的API服务器地址进行修改
   timeout: 10000, // 请求超时时间
   headers: {
@@ -106,6 +107,10 @@ const apiService = {
     update: (id, requirementData) => {
       return api.put(`/requirements/${id}`, requirementData);
     },
+    // 更新需求协议 - 新增
+    updateAgreement: (id, agreement) => {
+      return api.put(`/requirements/${id}/agreement`, { agreement });
+    },
     // 删除需求
     delete: (id) => {
       return api.delete(`/requirements/${id}`);
@@ -118,7 +123,7 @@ const apiService = {
     getMyApplications: () => {
       return api.get('/requirements/my-applications');
     },
-    // 获取指定需求的所有申请 - 新增API
+    // 获取指定需求的所有申请
     getApplicationsByRequirement: (id) => {
       return api.get(`/requirements/${id}/applications`);
     },
@@ -126,17 +131,17 @@ const apiService = {
     acceptRequirement: (id) => {
       return api.post(`/requirements/${id}/accept`);
     },
-    // 同意申请 - 更新API，需要传递applicationId
+    // 同意申请
     approveApplication: (id, applicationId) => {
       return api.post(`/requirements/${id}/applications/${applicationId}/approve`);
     },
-    // 拒绝申请 - 更新API，需要传递applicationId
+    // 拒绝申请
     rejectApplication: (id, applicationId) => {
       return api.post(`/requirements/${id}/applications/${applicationId}/reject`);
     }
   },
   
-  // 结果相关API
+  // 结果相关API (未变更，保留原有代码)
   results: {
     // 获取所有结果
     getAll: () => {

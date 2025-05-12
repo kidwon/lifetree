@@ -34,6 +34,23 @@
               </van-dropdown-menu>
             </template>
           </van-field>
+          
+          <!-- 添加协议编辑选项 -->
+          <div class="agreement-section">
+            <div class="field-label">
+              <div class="label-with-tip">
+                <span>协议内容</span>
+                <van-tag type="primary" size="medium" style="margin-left: 8px;">可选</van-tag>
+              </div>
+              <span class="field-tip">您可以选择编辑协议或在需求详情页中编辑</span>
+            </div>
+            
+            <van-cell
+              title="查看或编辑协议"
+              is-link
+              @click="goToEditAgreement"
+            />
+          </div>
         </van-cell-group>
         
         <div style="margin: 16px;">
@@ -183,6 +200,12 @@ export default {
       this.description = editorContent
       return true
     },
+    
+    // 前往协议编辑页面
+    goToEditAgreement() {
+      this.$router.push(`/requirement/${this.id}/agreement/edit`)
+    },
+    
     async onSubmit() {
       // 验证描述字段
       if (!this.validateDescription()) {
@@ -196,6 +219,7 @@ export default {
           title: this.title,
           description: this.description,
           status: this.status
+          // 注意这里不包含协议字段，因为协议在单独的页面编辑
         }
         
         // 调用API更新需求
@@ -258,6 +282,18 @@ export default {
   font-size: 14px;
 }
 
+.label-with-tip {
+  display: flex;
+  align-items: center;
+}
+
+.field-tip {
+  display: block;
+  font-size: 12px;
+  color: #969799;
+  margin-top: 2px;
+}
+
 .rich-text-editor {
   border: 1px solid #ebedf0;
   border-radius: 4px;
@@ -266,6 +302,14 @@ export default {
 .error-message {
   color: #ee0a24;
   font-size: 12px;
+  margin-top: 8px;
+}
+
+/* 协议相关样式 */
+.agreement-section {
+  background-color: #fff;
+  padding: 10px 16px;
+  position: relative;
   margin-top: 8px;
 }
 

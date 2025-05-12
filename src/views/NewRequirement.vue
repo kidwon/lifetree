@@ -20,6 +20,59 @@
             <!-- 错误提示 -->
             <div v-if="descriptionError" class="error-message">请填写需求描述</div>
           </div>
+          
+          <!-- 添加协议编辑器 -->
+          <div class="agreement-section">
+            <div class="field-label">
+              <div class="label-with-tip">
+                <span>协议内容</span>
+                <van-tag type="primary" size="medium" style="margin-left: 8px;">可选</van-tag>
+              </div>
+              <span class="field-tip">定义参与者需要同意的协议条款</span>
+            </div>
+            
+            <div v-if="showAgreementEditor">
+              <agreement-editor
+                @save="saveAgreement"
+                @cancel="toggleAgreementEditor"
+                ref="agreementEditor"
+                title="添加协议"
+              />
+            </div>
+            
+            <div v-else-if="agreement" class="agreement-preview">
+              <div v-html="agreement" class="agreement-content-preview"></div>
+              <div class="agreement-actions">
+                <van-button 
+                  type="primary" 
+                  size="small" 
+                  @click="toggleAgreementEditor"
+                >
+                  编辑协议
+                </van-button>
+                <van-button 
+                  type="danger" 
+                  size="small" 
+                  @click="clearAgreement"
+                >
+                  删除协议
+                </van-button>
+              </div>
+            </div>
+            
+            <div v-else class="agreement-add">
+              <van-button 
+                plain 
+                type="primary" 
+                size="small" 
+                icon="plus" 
+                @click="toggleAgreementEditor"
+              >
+                添加协议
+              </van-button>
+              <span class="add-agreement-tip">添加协议可以规范参与者行为和责任</span>
+            </div>
+          </div>
         </van-cell-group>
         
         <div style="margin: 16px;">
@@ -41,6 +94,7 @@
 
 <script>
 import HeaderBar from '../components/HeaderBar.vue'
+import AgreementEditor from '../components/AgreementEditor.vue'
 import apiService from '../api/api'
 import { showSuccessToast, showFailToast } from 'vant'
 import E from 'wangeditor'
@@ -48,15 +102,18 @@ import E from 'wangeditor'
 export default {
   name: 'NewRequirementPage',
   components: {
-    HeaderBar
+    HeaderBar,
+    AgreementEditor
   },
   data() {
     return {
       title: '',
       description: '',
+      agreement: '',
       editor: null,
       submitting: false,
-      descriptionError: false
+      descriptionError: false,
+      showAgreementEditor: false
     }
   },
   mounted() {
@@ -131,6 +188,28 @@ export default {
       this.description = editorContent
       return true
     },
+    
+    // 切换协议编辑器显示状态
+    toggleAgreementEditor() {
+      this.showAgreementEditor = !this.showAgreementEditor
+    },
+    
+    // 保存协议内容
+    saveAgreement(content) {
+      this.agreement = content
+      this.showAgreementEditor = false
+      
+      // 通知协议编辑器保存成功
+      if (this.$refs.agreementEditor) {
+        this.$refs.agreementEditor.saved(true)
+      }
+    },
+    
+    // 清除协议内容
+    clearAgreement() {
+      this.agreement = ''
+    },
+    
     async onSubmit() {
       // 验证描述字段
       if (!this.validateDescription()) {
@@ -142,7 +221,8 @@ export default {
       try {
         const requirementData = {
           title: this.title,
-          description: this.description
+          description: this.description,
+          agreement: this.agreement || null // 添加协议字段
         }
         
         // 调用API保存需求
@@ -184,6 +264,18 @@ export default {
   font-size: 14px;
 }
 
+.label-with-tip {
+  display: flex;
+  align-items: center;
+}
+
+.field-tip {
+  display: block;
+  font-size: 12px;
+  color: #969799;
+  margin-top: 2px;
+}
+
 .rich-text-editor {
   border: 1px solid #ebedf0;
   border-radius: 4px;
@@ -193,6 +285,49 @@ export default {
   color: #ee0a24;
   font-size: 12px;
   margin-top: 8px;
+}
+
+/* 协议相关样式 */
+.agreement-section {
+  background-color: #fff;
+  padding: 10px 16px;
+  position: relative;
+  margin-top: 8px;
+}
+
+.agreement-add {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.add-agreement-tip {
+  font-size: 12px;
+  color: #969799;
+}
+
+.agreement-preview {
+  margin: 12px 0;
+  border: 1px dashed #ebedf0;
+  border-radius: 4px;
+  padding: 12px;
+  position: relative;
+}
+
+.agreement-content-preview {
+  max-height: 200px;
+  overflow-y: auto;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.agreement-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 /* 优化移动端编辑器样式 */

@@ -1,4 +1,4 @@
-// router/index.js - 修改版本，添加基本路径配置
+// router/index.js - 添加协议编辑路由
 import { createRouter, createWebHashHistory } from 'vue-router'
 import auth from '@/store/auth'
 
@@ -15,6 +15,7 @@ import EditRequirement from '../views/EditRequirement.vue'
 import NewResult from '../views/NewResult.vue'
 import EditResult from '../views/EditResult.vue'
 import ResultsByRequirement from '../views/ResultsByRequirement.vue'
+import EditAgreement from '../views/EditAgreement.vue' // 新增协议编辑页面
 // 导入认证页面
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
@@ -58,6 +59,13 @@ const routes = [
     path: '/requirement/edit/:id',
     name: 'EditRequirement',
     component: EditRequirement,
+    props: true,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/requirement/:id/agreement/edit',
+    name: 'EditAgreement',
+    component: EditAgreement,
     props: true,
     meta: { requiresAuth: true }
   },
