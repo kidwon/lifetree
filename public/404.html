@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>生命树应用 - 页面重定向</title>
+  <script>
+    // 存储当前URL到会话存储，然后重定向到根页面
+    sessionStorage.redirect = location.pathname + location.search + location.hash;
+    window.location.href = '/lifetree/';
+  </script>
+</head>
+<body>
+  <h1>重定向中...</h1>
+  <p>如果您没有被自动重定向，请<a href="/lifetree/">点击这里</a>。</p>
+</body>
+</html>

@@ -1,5 +1,4 @@
-// router/index.js - 更新版本，添加结果编辑路由
-
+// router/index.js - 修改版本，添加基本路径配置
 import { createRouter, createWebHashHistory } from 'vue-router'
 import auth from '@/store/auth'
 
@@ -19,6 +18,9 @@ import ResultsByRequirement from '../views/ResultsByRequirement.vue'
 // 导入认证页面
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
+
+// 定义基本路径，根据是否在生产环境决定
+const basePath = process.env.NODE_ENV === 'production' ? '/lifetree/' : '/'
 
 // 定义路由
 const routes = [
@@ -120,7 +122,7 @@ const routes = [
 // 创建路由实例
 const router = createRouter({
   // 使用hash模式，更适合GitHub Pages部署
-  history: createWebHashHistory(),
+  history: createWebHashHistory(basePath), // 添加基本路径到路由器中
   routes
 })
 

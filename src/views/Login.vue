@@ -1,4 +1,4 @@
-// Login.vue - 完整代码，支持生物识别登录
+<!-- Login.vue - 完整代码，修改了重定向逻辑 -->
 <template>
   <div class="page">
     <header-bar :title="'登录'" :show-back="false" />
@@ -70,6 +70,7 @@ import { showToast, showFailToast } from 'vant';
 import auth from '@/store/auth';
 import { ref, onMounted } from 'vue';
 import apiService from '@/api/api';
+import { useRouter } from 'vue-router';
 
 export default {
   name: 'LoginPage',
@@ -77,6 +78,7 @@ export default {
     HeaderBar
   },
   setup() {
+    const router = useRouter();
     const email = ref('');
     const password = ref('');
     const loading = ref(false);
@@ -192,11 +194,11 @@ export default {
             type: 'success'
           });
           
-          // 导航到主页或重定向路径
+          // 导航到主页或重定向路径 - 修改为使用 router.push
           const redirectPath = sessionStorage.getItem('redirectPath') || '/';
           sessionStorage.removeItem('redirectPath');
           setTimeout(() => {
-            window.location.href = redirectPath;
+            router.push(redirectPath);
           }, 1000);
         } else {
           throw new Error('登录响应无效');
@@ -266,11 +268,11 @@ export default {
           type: 'success'
         });
         
-        // 跳转到首页或之前的页面
+        // 跳转到首页或之前的页面 - 修改为使用 router.push
         const redirectPath = sessionStorage.getItem('redirectPath') || '/';
         sessionStorage.removeItem('redirectPath');
         setTimeout(() => {
-          window.location.href = redirectPath;
+          router.push(redirectPath);
         }, 1000);
       } catch (error) {
         console.error('登录失败详细错误:', error);

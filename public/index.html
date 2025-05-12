@@ -1,11 +1,27 @@
 <!DOCTYPE html>
-<html lang="">
+<html lang="zh-CN">
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
     <link rel="icon" href="<%= BASE_URL %>favicon.ico">
-    <title><%= htmlWebpackPlugin.options.title %></title>
+    <title>生命树应用</title>
+    
+    <!-- 处理从404页面重定向过来的情况 -->
+    <script>
+      (function() {
+        var redirect = sessionStorage.redirect;
+        delete sessionStorage.redirect;
+        if (redirect && redirect !== location.href) {
+          // 处理URL路径，将/lifetree/前缀替换掉以匹配路由结构
+          var fixedPath = redirect.replace('/lifetree/', '/');
+          if (fixedPath.indexOf('/') !== 0) {
+            fixedPath = '/' + fixedPath;
+          }
+          history.replaceState(null, null, fixedPath);
+        }
+      })();
+    </script>
   </head>
   <body>
     <noscript>

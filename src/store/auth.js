@@ -1,7 +1,8 @@
-// src/store/auth.js - 添加生物识别登录支持
+// src/store/auth.js - 完整文件
 
 import { reactive } from 'vue';
 import apiService from '../api/api';
+import router from '../router'; // 导入路由器实例
 
 // 从本地存储中获取用户信息和令牌
 const getStoredUser = () => {
@@ -195,6 +196,9 @@ const authMethods = {
     authState.isAuthenticated = false;
     
     console.log('注销完成');
+    
+    // 使用路由导航而不是window.location
+    router.push('/login');
   },
   
   // 获取当前用户信息
