@@ -1,1 +1,12 @@
-<!doctype html><html lang=""><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="/lifetree/favicon.ico"><title>mobile-app</title><script defer="defer" src="/lifetree/js/chunk-vendors.5129d384.js"></script><script defer="defer" src="/lifetree/js/app.d73e7c8d.js"></script><link href="/lifetree/css/chunk-vendors.14d2b275.css" rel="stylesheet"><link href="/lifetree/css/app.3cbc0bb5.css" rel="stylesheet"></head><body><noscript><strong>We're sorry but mobile-app doesn't work properly without JavaScript enabled. Please enable it to continue.</strong></noscript><div id="app"></div></body></html>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><link rel="icon" href="/lifetree/favicon.ico"><title>生命树应用</title><script>(function() {
+        var redirect = sessionStorage.redirect;
+        delete sessionStorage.redirect;
+        if (redirect && redirect !== location.href) {
+          // 处理URL路径，将/lifetree/前缀替换掉以匹配路由结构
+          var fixedPath = redirect.replace('/lifetree/', '/');
+          if (fixedPath.indexOf('/') !== 0) {
+            fixedPath = '/' + fixedPath;
+          }
+          history.replaceState(null, null, fixedPath);
+        }
+      })();</script><script defer="defer" src="/lifetree/js/chunk-vendors.5129d384.js"></script><script defer="defer" src="/lifetree/js/app.5b120d8a.js"></script><link href="/lifetree/css/chunk-vendors.14d2b275.css" rel="stylesheet"><link href="/lifetree/css/app.4223b2c3.css" rel="stylesheet"></head><body><noscript><strong>We're sorry but mobile-app doesn't work properly without JavaScript enabled. Please enable it to continue.</strong></noscript><div id="app"></div></body></html>
