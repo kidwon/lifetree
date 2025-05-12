@@ -1,18 +1,12 @@
 <template>
   <div class="nav-bar">
     <van-tabbar v-model="active" route>
-      <van-tabbar-item to="/requirements">
+      <van-tabbar-item to="/results">
         <template #icon>
-          <div 
-            class="custom-icon"
-            @touchstart="handleTouchStart('requirements')"
-            @touchend="handleTouchEnd"
-            @mousedown="handleMouseDown('requirements')"
-            @mouseup="handleMouseUp"
-            @mouseleave="handleMouseUp"
-          >
+          <div class="custom-icon" @touchstart="handleTouchStart('results')" @touchend="handleTouchEnd"
+            @mousedown="handleMouseDown('results')" @mouseup="handleMouseUp" @mouseleave="handleMouseUp">
             <div class="icon-circle">
-              <img src="https://b.yzcdn.cn/vant/dark-theme.svg" alt="月亮" class="theme-icon" />
+              <img src="https://b.yzcdn.cn/vant/light-theme.svg" alt="太阳" class="theme-icon" />
             </div>
           </div>
         </template>
@@ -26,18 +20,12 @@
           </div>
         </template>
       </van-tabbar-item>
-      <van-tabbar-item to="/results">
+      <van-tabbar-item to="/requirements">
         <template #icon>
-          <div 
-            class="custom-icon"
-            @touchstart="handleTouchStart('results')"
-            @touchend="handleTouchEnd"
-            @mousedown="handleMouseDown('results')"
-            @mouseup="handleMouseUp"
-            @mouseleave="handleMouseUp"
-          >
+          <div class="custom-icon" @touchstart="handleTouchStart('requirements')" @touchend="handleTouchEnd"
+            @mousedown="handleMouseDown('requirements')" @mouseup="handleMouseUp" @mouseleave="handleMouseUp">
             <div class="icon-circle">
-              <img src="https://b.yzcdn.cn/vant/light-theme.svg" alt="太阳" class="theme-icon" />
+              <img src="https://b.yzcdn.cn/vant/dark-theme.svg" alt="月亮" class="theme-icon" />
             </div>
           </div>
         </template>
@@ -94,13 +82,13 @@ export default {
       if (this.longPressTimer) {
         clearTimeout(this.longPressTimer);
       }
-      
+
       // 设置长按定时器
       this.longPressTimer = setTimeout(() => {
         this.onLongPress(icon);
       }, this.longPressDelay);
     },
-    
+
     handleTouchEnd() {
       // 清除定时器
       if (this.longPressTimer) {
@@ -118,13 +106,13 @@ export default {
       if (this.longPressTimer) {
         clearTimeout(this.longPressTimer);
       }
-      
+
       // 设置长按定时器
       this.longPressTimer = setTimeout(() => {
         this.onLongPress(icon);
       }, this.longPressDelay);
     },
-    
+
     handleMouseUp() {
       // 清除定时器
       if (this.longPressTimer) {
@@ -133,7 +121,7 @@ export default {
       }
       this.currentIcon = null;
     },
-    
+
     onLongPress(icon) {
       if (icon === 'requirements') {
         // 长按月亮图标，跳转到新建需求页面
@@ -142,7 +130,7 @@ export default {
         // 长按太阳图标，跳转到新建结果页面
         this.$router.push('/result/new');
       }
-      
+
       // 使用导入的showToast而不是this.$toast
       showToast({
         message: `正在前往${icon === 'requirements' ? '新建需求' : '新建结果'}页面...`,
