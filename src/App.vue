@@ -13,16 +13,23 @@ export default {
 
 <style>
 /* 使用@font-face引入崇羲篆体 */
-@font-face {
+/* @font-face {
   font-family: 'ChongXiZhuanTi';
   src: url('./assets/fonts/ChongXiZhuanTi.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+} */
+
+@font-face {
+  font-family: 'FaGunPinYin';
+  src: url('./assets/fonts/FaGunPinYin.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
 
 /* 小篆字体类 */
 .small-seal-font {
-  font-family: 'ChongXiZhuanTi', sans-serif;
+  font-family: 'FaGunPinYin', sans-serif;
 }
 
 /* 为标题专门定制的小篆样式 */
