@@ -18,7 +18,7 @@
         :loading="loading"
         :disabled="loading"
       >
-        我已阅读并同意此协议
+        {{ buttonText }}
       </van-button>
       
       <van-button 
@@ -52,6 +52,10 @@ export default {
     loading: {
       type: Boolean,
       default: false
+    },
+    buttonText: {
+      type: String,
+      default: '我已阅读并同意此协议'
     }
   },
   methods: {

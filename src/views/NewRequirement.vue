@@ -42,6 +42,10 @@
             
             <div v-else-if="agreement" class="agreement-preview">
               <div v-html="agreement" class="agreement-content-preview"></div>
+              <div v-if="agreementButtonText" class="agreement-button-preview">
+                <p class="button-preview-label">确认按钮文本：</p>
+                <van-tag type="primary" size="medium">{{ agreementButtonText }}</van-tag>
+              </div>
               <div class="agreement-actions">
                 <van-button 
                   type="primary" 
@@ -110,6 +114,7 @@ export default {
       title: '',
       description: '',
       agreement: '',
+      agreementButtonText: '', // 新增协议按钮文本
       editor: null,
       submitting: false,
       descriptionError: false,
@@ -194,9 +199,10 @@ export default {
       this.showAgreementEditor = !this.showAgreementEditor
     },
     
-    // 保存协议内容
-    saveAgreement(content) {
+    // 保存协议内容和按钮文本
+    saveAgreement(content, buttonText) {
       this.agreement = content
+      this.agreementButtonText = buttonText
       this.showAgreementEditor = false
       
       // 通知协议编辑器保存成功
@@ -205,9 +211,10 @@ export default {
       }
     },
     
-    // 清除协议内容
+    // 清除协议内容和按钮文本
     clearAgreement() {
       this.agreement = ''
+      this.agreementButtonText = ''
     },
     
     async onSubmit() {
@@ -222,7 +229,8 @@ export default {
         const requirementData = {
           title: this.title,
           description: this.description,
-          agreement: this.agreement || null // 添加协议字段
+          agreement: this.agreement || null,
+          agreementButtonText: this.agreementButtonText || null // 添加协议按钮文本字段
         }
         
         // 调用API保存需求
@@ -321,6 +329,20 @@ export default {
   overflow-y: auto;
   font-size: 14px;
   line-height: 1.5;
+}
+
+.agreement-button-preview {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed #ebedf0;
+  display: flex;
+  align-items: center;
+}
+
+.button-preview-label {
+  margin: 0 8px 0 0;
+  font-size: 13px;
+  color: #646566;
 }
 
 .agreement-actions {

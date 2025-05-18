@@ -107,9 +107,12 @@ const apiService = {
     update: (id, requirementData) => {
       return api.put(`/requirements/${id}`, requirementData);
     },
-    // 更新需求协议 - 新增
-    updateAgreement: (id, agreement) => {
-      return api.put(`/requirements/${id}/agreement`, { agreement });
+    // 更新需求协议 - 更新以支持按钮文本
+    updateAgreement: (id, agreement, agreementButtonText = null) => {
+      return api.put(`/requirements/${id}/agreement`, { 
+        agreement,
+        agreementButtonText
+      });
     },
     // 删除需求
     delete: (id) => {

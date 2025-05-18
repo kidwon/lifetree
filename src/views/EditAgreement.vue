@@ -8,6 +8,7 @@
       <template v-else>
         <agreement-editor 
           :initialContent="agreement" 
+          :initialButtonText="agreementButtonText"
           @save="saveAgreement"
           @cancel="goBack"
           ref="agreementEditor"
@@ -39,6 +40,7 @@ export default {
     return {
       requirement: null,
       agreement: '',
+      agreementButtonText: '',
       loading: true
     }
   },
@@ -52,6 +54,7 @@ export default {
         const response = await apiService.requirements.getById(this.id)
         this.requirement = response.data
         this.agreement = this.requirement.agreement || ''
+        this.agreementButtonText = this.requirement.agreementButtonText || ''
         
       } catch (error) {
         console.error('Error fetching requirement detail:', error)
@@ -62,9 +65,9 @@ export default {
       }
     },
     
-    async saveAgreement(content) {
+    async saveAgreement(content, buttonText) {
       try {
-        await apiService.requirements.updateAgreement(this.id, content)
+        await apiService.requirements.updateAgreement(this.id, content, buttonText || null)
         this.$refs.agreementEditor.saved(true, '协议保存成功')
         
         // 成功后短暂延迟返回详情页

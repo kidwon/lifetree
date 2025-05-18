@@ -11,6 +11,7 @@
           :title="'需求协议 - ' + requirement.title"
           :showActions="true"
           :loading="applying"
+          :buttonText="getButtonText()"
           @agree="acceptRequirement"
           @back="goBack"
         />
@@ -54,6 +55,7 @@ export default {
         id: '',
         title: '',
         agreement: '',
+        agreementButtonText: null,
         status: ''
       },
       loading: true,
@@ -98,6 +100,11 @@ export default {
       } finally {
         this.loading = false;
       }
+    },
+    
+    // 获取按钮文本
+    getButtonText() {
+      return this.requirement.agreementButtonText || '我已阅读并同意此协议';
     },
     
     // 检查当前用户是否已申请此需求

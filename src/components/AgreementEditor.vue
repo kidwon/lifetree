@@ -9,7 +9,26 @@
       <!-- 使用div作为富文本编辑器容器 -->
       <div ref="editor" class="rich-text-editor"></div>
       <!-- 错误提示 -->
-      <div v-if="error" class="error-message">{{ errorMessage }}</div>
+      <div v-if="contentError" class="error-message">{{ contentErrorMessage }}</div>
+    </div>
+    
+    <!-- 新增协议按钮文本编辑 -->
+    <div class="button-text-editor">
+      <div class="field-label">
+        <div class="label-with-tip">
+          <span>确认按钮文本</span>
+          <van-tag type="primary" size="mini" style="margin-left: 8px;">可选</van-tag>
+        </div>
+        <span class="field-tip">自定义"同意协议"按钮文本，最长20个字符</span>
+      </div>
+      
+      <van-field
+        v-model="buttonText"
+        placeholder="请输入按钮文本，留空则使用默认文本"
+        :maxlength="20"
+        show-word-limit
+      />
+      <div v-if="buttonTextError" class="error-message">{{ buttonTextErrorMessage }}</div>
     </div>
     
     <div class="editor-actions">
@@ -43,6 +62,10 @@ export default {
       type: String,
       default: ''
     },
+    initialButtonText: {
+      type: String,
+      default: ''
+    },
     title: {
       type: String,
       default: '编辑协议'
@@ -52,9 +75,12 @@ export default {
     return {
       editor: null,
       content: '',
+      buttonText: this.initialButtonText || '',
       saving: false,
-      error: false,
-      errorMessage: '协议内容不能为空'
+      contentError: false,
+      contentErrorMessage: '协议内容不能为空',
+      buttonTextError: false,
+      buttonTextErrorMessage: '按钮文本最长为20个字符'
     }
   },
   mounted() {
@@ -126,29 +152,51 @@ export default {
       
       // 检查内容是否为空
       if (!editorContent || editorContent === '<p><br></p>') {
-        this.error = true
+        this.contentError = true
         return false
       }
       
-      this.error = false
+      this.contentError = false
       this.content = editorContent
       return true
     },
     
+    validateButtonText() {
+      // 按钮文本可以为空（使用默认值）
+      if (!this.buttonText) {
+        this.buttonTextError = false
+        return true
+      }
+      
+      // 检查按钮文本长度
+      if (this.buttonText.length > 20) {
+        this.buttonTextError = true
+        return false
+      }
+      
+      this.buttonTextError = false
+      return true
+    },
+    
     saveAgreement() {
-      if (!this.validateContent()) {
-        showFailToast(this.errorMessage)
+      const contentValid = this.validateContent()
+      const buttonTextValid = this.validateButtonText()
+      
+      if (!contentValid || !buttonTextValid) {
+        if (!contentValid) {
+          showFailToast(this.contentErrorMessage)
+        } else {
+          showFailToast(this.buttonTextErrorMessage)
+        }
         return
       }
       
       this.saving = true
       
-      // 发射内容更新事件
-      this.$emit('save', this.content)
+      // 发射内容更新事件，包括按钮文本
+      this.$emit('save', this.content, this.buttonText)
       
       // 在组件内不处理保存逻辑，由父组件处理
-      // 父组件应当监听save事件并处理保存逻辑
-      // 父组件需要调用saved方法通知保存完成
     },
     
     saved(success, message) {
@@ -235,6 +283,30 @@ export default {
   justify-content: flex-end;
   gap: 12px;
   margin-top: 16px;
+}
+
+/* 按钮文本编辑器样式 */
+.button-text-editor {
+  margin-top: 20px;
+  margin-bottom: 16px;
+}
+
+.field-label {
+  margin-bottom: 8px;
+  color: #646566;
+  font-size: 14px;
+}
+
+.label-with-tip {
+  display: flex;
+  align-items: center;
+}
+
+.field-tip {
+  display: block;
+  font-size: 12px;
+  color: #969799;
+  margin-top: 2px;
 }
 
 /* 优化移动端编辑器样式 */
